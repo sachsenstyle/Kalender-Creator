@@ -2,258 +2,662 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Kalender Generator Pro</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;600&display=swap" rel="stylesheet">
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
-:root{
-  --bg:#1c1c14;
-  --bg2:#252518;
-  --card:#2e2e20;
-  --border:rgba(255,255,255,0.10);
-  --red:#d40d0d;
-  --gold:#c8a84b;
-  --white:#ffffff;
-  --grey:#888877;
-  --text:#ddddcc;
-}
-body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Source+Sans+3:wght@300;400;600&display=swap');
 
-/* Header */
-header{background:var(--bg2);border-bottom:2px solid var(--red);padding:18px 32px;display:flex;align-items:center;justify-content:space-between}
-.logo{font-family:'Playfair Display',serif;font-size:24px;color:var(--white)}
-.logo span{color:var(--red)}
-.logo small{display:block;font-size:10px;letter-spacing:3px;color:var(--gold);font-family:'DM Sans',sans-serif;font-weight:300;text-transform:uppercase;margin-top:2px}
-.badge{background:var(--red);color:#fff;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:600;letter-spacing:1px}
+  :root {
+    --olive: #5a5a48;
+    --olive-dark: #3a3a2c;
+    --olive-light: #7a7a60;
+    --red: #d40d0d;
+    --red-light: #e83030;
+    --cream: #f5f0e8;
+    --gold: #c8a84b;
+    --text: #1a1a14;
+    --white: #ffffff;
+    --shadow: 0 8px 32px rgba(0,0,0,0.25);
+  }
 
-/* Container */
-.wrap{max-width:880px;margin:0 auto;padding:28px 20px 60px}
+  * { box-sizing: border-box; margin: 0; padding: 0; }
 
-/* Tabs */
-.tabs{display:flex;background:rgba(0,0,0,0.25);border-radius:10px;margin-bottom:24px;overflow:hidden}
-.tab{flex:1;padding:12px 6px;background:transparent;border:none;color:rgba(255,255,255,0.4);cursor:pointer;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:7px;border-right:1px solid rgba(255,255,255,0.07)}
-.tab:last-child{border-right:none}
-.tab.on{background:var(--red);color:#fff}
-.tab.done{color:var(--gold)}
-.tab .n{width:20px;height:20px;border-radius:50%;background:rgba(255,255,255,0.12);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0}
-.tab.on .n{background:rgba(255,255,255,0.22)}
-.tab.done .n{background:var(--gold);color:var(--bg)}
+  body {
+    font-family: 'Source Sans 3', sans-serif;
+    background: var(--olive-dark);
+    min-height: 100vh;
+    color: var(--white);
+  }
 
-/* Card */
-.card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:28px;margin-bottom:16px}
-.ctitle{font-family:'Playfair Display',serif;font-size:18px;color:var(--gold);margin-bottom:20px;display:flex;align-items:center;gap:10px}
-.ctitle::before{content:'';width:4px;height:18px;background:var(--red);border-radius:2px;flex-shrink:0}
+  /* ── Header ── */
+  header {
+    background: linear-gradient(135deg, #2a2a1e 0%, #3d3d2e 50%, #2a2a1e 100%);
+    border-bottom: 3px solid var(--red);
+    padding: 24px 40px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  header h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 28px;
+    color: var(--white);
+    letter-spacing: 2px;
+  }
+  header h1 span { color: var(--red); }
+  header .subtitle {
+    font-size: 12px;
+    color: var(--gold);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-top: 4px;
+  }
+  .version-badge {
+    background: var(--red);
+    color: white;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 1px;
+  }
 
-/* Form */
-.row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
-.row.full{grid-template-columns:1fr}
-.row.tri{grid-template-columns:1fr 1fr 1fr}
-label{display:block;font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:rgba(255,255,255,0.45);margin-bottom:7px}
-input,select,textarea{width:100%;background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.13);border-radius:8px;color:#fff;padding:11px 14px;font-family:'DM Sans',sans-serif;font-size:14px;outline:none;transition:border-color .2s}
-input:focus,select:focus{border-color:var(--red)}
-select option{background:#2e2e20}
-.sep{height:1px;background:rgba(255,255,255,0.07);margin:20px 0}
+  /* ── Layout ── */
+  .container {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 32px 20px 60px;
+  }
 
-/* Upload */
-.modebtns{display:flex;gap:10px;margin-bottom:16px}
-.mbtn{flex:1;padding:13px;border:2px solid rgba(255,255,255,0.13);border-radius:9px;background:transparent;color:rgba(255,255,255,0.5);cursor:pointer;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;transition:all .2s;text-align:center}
-.mbtn.on{border-color:var(--red);color:#fff;background:rgba(212,13,13,0.10)}
-.dropzone{border:2px dashed rgba(255,255,255,0.18);border-radius:11px;padding:36px;text-align:center;cursor:pointer;transition:all .2s;position:relative}
-.dropzone:hover,.dropzone.over{border-color:var(--red);background:rgba(212,13,13,0.05)}
-.dropzone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
-.dicon{font-size:44px;margin-bottom:10px}
-.dtxt{font-size:14px;color:rgba(255,255,255,0.6)}
-.dhint{font-size:12px;color:rgba(255,255,255,0.3);margin-top:5px}
-.thumbrow{display:flex;gap:5px;flex-wrap:wrap;margin-top:14px}
-.thumb{width:58px;height:44px;border-radius:5px;overflow:hidden;border:none}
-.thumb img{width:100%;height:100%;object-fit:cover}
+  /* ── Steps ── */
+  .steps-nav {
+    display: flex;
+    gap: 0;
+    margin-bottom: 32px;
+    background: rgba(0,0,0,0.2);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .step-btn {
+    flex: 1;
+    padding: 14px 8px;
+    background: transparent;
+    border: none;
+    color: rgba(255,255,255,0.45);
+    cursor: pointer;
+    font-family: 'Source Sans 3', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border-right: 1px solid rgba(255,255,255,0.08);
+    position: relative;
+  }
+  .step-btn:last-child { border-right: none; }
+  .step-btn.active {
+    background: var(--red);
+    color: white;
+  }
+  .step-btn.done {
+    color: var(--gold);
+  }
+  .step-btn .num {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.15);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 700; flex-shrink: 0;
+  }
+  .step-btn.active .num { background: rgba(255,255,255,0.25); }
+  .step-btn.done .num { background: var(--gold); color: var(--olive-dark); }
 
-/* Slots */
-.slots{display:grid;grid-template-columns:repeat(4,1fr);gap:9px}
-.slot{aspect-ratio:4/3;border:2px dashed rgba(255,255,255,0.16);border-radius:9px;overflow:hidden;position:relative;cursor:pointer;background:rgba(0,0,0,0.18);transition:border-color .2s}
-.slot:hover{border-color:var(--red)}
-.slot input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
-.slabel{position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,0.75));padding:16px 6px 5px;font-size:10px;font-weight:600;text-align:center;color:rgba(255,255,255,0.65);letter-spacing:.4px}
-.slot img{width:100%;height:100%;object-fit:cover}
-.sempty{width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.2);font-size:22px}
+  /* ── Cards ── */
+  .card {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.10);
+    border-radius: 16px;
+    padding: 32px;
+    margin-bottom: 20px;
+    backdrop-filter: blur(4px);
+  }
+  .card-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 20px;
+    color: var(--gold);
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .card-title::before {
+    content: '';
+    display: block;
+    width: 4px; height: 22px;
+    background: var(--red);
+    border-radius: 2px;
+  }
 
-/* Colors */
-.colors{display:flex;gap:9px;flex-wrap:wrap}
-.col{width:34px;height:34px;border-radius:50%;cursor:pointer;border:3px solid transparent;transition:all .2s}
-.col.on{border-color:#fff;transform:scale(1.15)}
-.chip{padding:7px 13px;border-radius:20px;border:1.5px solid rgba(255,255,255,0.16);color:rgba(255,255,255,0.55);cursor:pointer;font-size:13px;font-weight:600;transition:all .18s;background:rgba(0,0,0,0.15);user-select:none}
-.chip:hover{border-color:rgba(255,255,255,0.38);color:rgba(255,255,255,0.85)}
-.chip.on{background:var(--red);border-color:var(--red);color:white}
-.chip-toggle{padding:7px 13px;border-radius:20px;border:1.5px solid rgba(255,255,255,0.16);color:rgba(255,255,255,0.45);cursor:pointer;font-size:13px;font-weight:600;transition:all .18s;background:rgba(0,0,0,0.15);user-select:none}
-.chip-toggle:hover{border-color:rgba(255,255,255,0.38);color:rgba(255,255,255,0.85)}
-.chip-toggle.on{background:rgba(200,168,75,0.2);border-color:var(--gold);color:var(--gold)}
+  /* ── Form elements ── */
+  .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+  .form-row.full { grid-template-columns: 1fr; }
+  .form-row.thirds { grid-template-columns: 1fr 1fr 1fr; }
 
-/* Info */
-.info{background:rgba(200,168,75,0.08);border:1px solid rgba(200,168,75,0.2);border-radius:7px;padding:11px 14px;font-size:13px;color:rgba(255,255,255,0.6);margin-top:10px;line-height:1.6}
-.info strong{color:var(--gold)}
+  label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.55);
+    margin-bottom: 8px;
+  }
+  input[type=text], input[type=number], input[type=email], input[type=tel], select, textarea {
+    width: 100%;
+    background: rgba(0,0,0,0.3);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 8px;
+    color: white;
+    padding: 12px 16px;
+    font-family: 'Source Sans 3', sans-serif;
+    font-size: 15px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  input:focus, select:focus, textarea:focus {
+    border-color: var(--red);
+  }
+  select option { background: #3a3a2c; }
+  textarea { resize: vertical; min-height: 80px; }
 
-/* Buttons */
-.btnrow{display:flex;gap:10px;justify-content:flex-end;margin-top:20px}
-.btn{padding:13px 26px;border-radius:9px;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;transition:all .2s}
-.btn-red{background:var(--red);color:#fff}
-.btn-red:hover{background:#e82020;transform:translateY(-1px)}
-.btn-red:disabled{background:rgba(255,255,255,0.12);cursor:not-allowed;transform:none}
-.btn-out{background:transparent;border:2px solid rgba(255,255,255,0.22);color:rgba(255,255,255,0.7)}
-.btn-out:hover{border-color:#fff;color:#fff}
-.btn-gold{background:linear-gradient(135deg,var(--gold),#e0b84a);color:var(--bg);font-weight:700;font-size:15px;padding:15px 36px}
-.btn-gold:hover{transform:translateY(-2px);box-shadow:0 8px 22px rgba(200,168,75,0.35)}
-.btn-gold:disabled{background:rgba(255,255,255,0.12);color:rgba(255,255,255,0.35);cursor:not-allowed;transform:none;box-shadow:none}
+  /* ── Upload zones ── */
+  .upload-mode {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .mode-btn {
+    flex: 1;
+    padding: 14px;
+    border: 2px solid rgba(255,255,255,0.15);
+    border-radius: 10px;
+    background: transparent;
+    color: rgba(255,255,255,0.55);
+    cursor: pointer;
+    font-family: 'Source Sans 3', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.2s;
+    text-align: center;
+  }
+  .mode-btn.active {
+    border-color: var(--red);
+    color: white;
+    background: rgba(212,13,13,0.12);
+  }
 
-/* Summary */
-.sumgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px}
-.sumbox{background:rgba(0,0,0,0.2);border-radius:9px;padding:14px}
-.sumlabel{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:rgba(255,255,255,0.35);margin-bottom:6px}
-.sumval{font-size:15px;font-weight:600}
-.sumsub{font-size:12px;color:var(--grey);margin-top:3px}
+  .drop-zone {
+    border: 2px dashed rgba(255,255,255,0.20);
+    border-radius: 12px;
+    padding: 40px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+  }
+  .drop-zone:hover, .drop-zone.drag-over {
+    border-color: var(--red);
+    background: rgba(212,13,13,0.06);
+  }
+  .drop-zone input[type=file] {
+    position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+  }
+  .drop-icon { font-size: 48px; margin-bottom: 12px; }
+  .drop-text { font-size: 15px; color: rgba(255,255,255,0.65); }
+  .drop-hint { font-size: 12px; color: rgba(255,255,255,0.35); margin-top: 6px; }
 
-/* Sections */
-.sec{display:none}
-.sec.on{display:block}
+  /* ── 12 individual slots ── */
+  .slots-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+  }
+  .slot {
+    aspect-ratio: 4/3;
+    border: 2px dashed rgba(255,255,255,0.18);
+    border-radius: 10px;
+    overflow: hidden;
+    position: relative;
+    cursor: pointer;
+    background: rgba(0,0,0,0.2);
+    transition: border-color 0.2s;
+  }
+  .slot:hover { border-color: var(--red); }
+  .slot input[type=file] {
+    position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+  }
+  .slot-label {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    background: linear-gradient(transparent, rgba(0,0,0,0.8));
+    padding: 20px 8px 6px;
+    font-size: 11px;
+    font-weight: 600;
+    text-align: center;
+    color: rgba(255,255,255,0.70);
+    letter-spacing: 0.5px;
+  }
+  .slot img {
+    width: 100%; height: 100%; object-fit: cover;
+  }
+  .slot .slot-empty {
+    width: 100%; height: 100%;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 6px;
+    color: rgba(255,255,255,0.25);
+    font-size: 24px;
+  }
 
-/* Loader */
-#loader{display:none;position:fixed;inset:0;background:rgba(20,20,12,0.93);z-index:999;flex-direction:column;align-items:center;justify-content:center;gap:20px}
-#loader.on{display:flex}
-.spin{width:56px;height:56px;border:4px solid rgba(255,255,255,0.08);border-top-color:var(--red);border-radius:50%;animation:sp .75s linear infinite}
-@keyframes sp{to{transform:rotate(360deg)}}
-.ltxt{font-family:'Playfair Display',serif;font-size:20px;color:#fff}
-.lsub{font-size:13px;color:rgba(255,255,255,0.45);text-align:center}
-.lbar{width:260px;height:4px;background:rgba(255,255,255,0.08);border-radius:4px;overflow:hidden}
-.lfill{height:100%;background:linear-gradient(90deg,var(--red),var(--gold));border-radius:4px;width:0%;transition:width .3s}
+  /* ── Preview strip ── */
+  .preview-strip {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-top: 16px;
+  }
+  .preview-thumb {
+    width: 60px; height: 45px;
+    border-radius: 6px;
+    overflow: hidden;
+    border: 2px solid rgba(255,255,255,0.15);
+  }
+  .preview-thumb img { width: 100%; height: 100%; object-fit: cover; }
 
-footer{text-align:center;padding:18px;color:rgba(255,255,255,0.2);font-size:12px;border-top:1px solid rgba(255,255,255,0.05)}
+  /* ── Color picker ── */
+  .color-options {
+    display: flex; gap: 10px; flex-wrap: wrap;
+  }
+  .color-opt {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 3px solid transparent;
+    transition: all 0.2s;
+  }
+  .color-opt.selected { border-color: white; transform: scale(1.15); }
 
-@media(max-width:600px){
-  .row{grid-template-columns:1fr}
-  .row.tri{grid-template-columns:1fr 1fr}
-  .slots{grid-template-columns:repeat(3,1fr)}
-  .tab span.lbl{display:none}
-}
+  /* ── Progress ── */
+  .progress-bar {
+    display: none;
+    background: rgba(0,0,0,0.3);
+    border-radius: 8px;
+    overflow: hidden;
+    height: 8px;
+    margin-top: 16px;
+  }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--red), var(--gold));
+    border-radius: 8px;
+    transition: width 0.3s;
+    width: 0%;
+  }
+  .progress-label {
+    font-size: 13px;
+    color: rgba(255,255,255,0.65);
+    margin-top: 8px;
+    text-align: center;
+    display: none;
+  }
+
+  /* ── Buttons ── */
+  .btn {
+    padding: 14px 28px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    font-family: 'Source Sans 3', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    transition: all 0.2s;
+  }
+  .btn-primary {
+    background: var(--red);
+    color: white;
+  }
+  .btn-primary:hover { background: var(--red-light); transform: translateY(-1px); }
+  .btn-primary:disabled { background: rgba(255,255,255,0.15); cursor: not-allowed; transform: none; }
+  .btn-outline {
+    background: transparent;
+    border: 2px solid rgba(255,255,255,0.25);
+    color: rgba(255,255,255,0.75);
+  }
+  .btn-outline:hover { border-color: white; color: white; }
+  .btn-gold {
+    background: linear-gradient(135deg, var(--gold), #e8c060);
+    color: var(--olive-dark);
+    font-weight: 700;
+    font-size: 16px;
+    padding: 16px 40px;
+  }
+  .btn-gold:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(200,168,75,0.4); }
+  .btn-gold:disabled { background: rgba(255,255,255,0.15); color: rgba(255,255,255,0.4); cursor: not-allowed; transform: none; box-shadow: none; }
+
+  .btn-row {
+    display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px;
+  }
+
+  /* ── Status ── */
+  .status-box {
+    background: rgba(0,0,0,0.25);
+    border-radius: 10px;
+    padding: 16px 20px;
+    font-size: 14px;
+    color: rgba(255,255,255,0.65);
+    margin-top: 16px;
+    display: none;
+  }
+  .status-box.show { display: block; }
+  .status-ok { color: #4caf50; }
+  .status-err { color: var(--red-light); }
+
+  /* ── Info boxes ── */
+  .info-box {
+    background: rgba(200,168,75,0.10);
+    border: 1px solid rgba(200,168,75,0.25);
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 13px;
+    color: rgba(255,255,255,0.65);
+    margin-top: 12px;
+    line-height: 1.6;
+  }
+  .info-box strong { color: var(--gold); }
+
+  /* ── Sections ── */
+  .section { display: none; }
+  .section.active { display: block; }
+
+  /* ── Separator ── */
+  .sep { height: 1px; background: rgba(255,255,255,0.08); margin: 24px 0; }
+
+  /* ── Footer ── */
+  footer {
+    text-align: center;
+    padding: 20px;
+    color: rgba(255,255,255,0.25);
+    font-size: 12px;
+    border-top: 1px solid rgba(255,255,255,0.06);
+  }
+
+  /* ── Loader overlay ── */
+  #loader {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(30,30,20,0.92);
+    z-index: 1000;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 24px;
+  }
+  #loader.show { display: flex; }
+  .loader-spinner {
+    width: 60px; height: 60px;
+    border: 4px solid rgba(255,255,255,0.1);
+    border-top-color: var(--red);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loader-text {
+    font-family: 'Playfair Display', serif;
+    font-size: 22px;
+    color: white;
+  }
+  .loader-sub {
+    font-size: 14px;
+    color: rgba(255,255,255,0.50);
+    text-align: center;
+    max-width: 300px;
+  }
+  .loader-progress {
+    width: 280px; height: 4px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .loader-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--red), var(--gold));
+    border-radius: 4px;
+    width: 0%;
+    transition: width 0.4s;
+  }
+
+  /* ── Chips ── */
+  .chip-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 4px;
+  }
+  .chip {
+    padding: 8px 14px;
+    border-radius: 20px;
+    border: 1.5px solid rgba(255,255,255,0.18);
+    color: rgba(255,255,255,0.55);
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    transition: all 0.18s;
+    user-select: none;
+    background: rgba(0,0,0,0.15);
+  }
+  .chip:hover {
+    border-color: rgba(255,255,255,0.40);
+    color: rgba(255,255,255,0.85);
+  }
+  .chip.active {
+    background: var(--red);
+    border-color: var(--red);
+    color: white;
+  }
+  .chip.toggle.active {
+    background: rgba(200,168,75,0.25);
+    border-color: var(--gold);
+    color: var(--gold);
+  }
+
+  @media (max-width: 640px) {
+    .form-row { grid-template-columns: 1fr; }
+    .form-row.thirds { grid-template-columns: 1fr 1fr; }
+    .slots-grid { grid-template-columns: repeat(3, 1fr); }
+    header { padding: 16px 20px; }
+    header h1 { font-size: 20px; }
+    .container { padding: 20px 12px 40px; }
+    .step-btn span.label { display: none; }
+  }
 </style>
 </head>
 <body>
 
+<!-- Loader -->
 <div id="loader">
-  <div class="spin"></div>
-  <div class="ltxt">Kalender wird erstellt…</div>
-  <div class="lsub" id="lmsg">Bitte warten</div>
-  <div class="lbar"><div class="lfill" id="lbar"></div></div>
+  <div class="loader-spinner"></div>
+  <div class="loader-text">Kalender wird erstellt…</div>
+  <div class="loader-sub" id="loader-msg">Bilder werden verarbeitet</div>
+  <div class="loader-progress"><div class="loader-progress-fill" id="loader-bar"></div></div>
 </div>
 
 <header>
-  <div class="logo">Kalender <span>Generator Pro</span><small>Professional Edition</small></div>
-  <div class="badge">V 2.6</div>
+  <div>
+    <h1>Kalender <span>Generator Pro</span></h1>
+    <div class="subtitle">Professional Edition · 2027</div>
+  </div>
+  <div class="version-badge">V 10.9</div>
 </header>
 
-<div class="wrap">
+<div class="container">
 
-  <nav class="tabs">
-    <button class="tab on" onclick="go(0)" id="t0"><span class="n">✨</span><span class="lbl">Prompt</span></button>
-    <button class="tab" onclick="go(1)" id="t1"><span class="n">1</span><span class="lbl">Einstellungen</span></button>
-    <button class="tab" onclick="go(2)" id="t2"><span class="n">2</span><span class="lbl">Bilder</span></button>
-    <button class="tab" onclick="go(3)" id="t3"><span class="n">3</span><span class="lbl">Branding</span></button>
-    <button class="tab" onclick="go(4)" id="t4"><span class="n">4</span><span class="lbl">PDF erstellen</span></button>
+  <!-- Step Navigation -->
+  <nav class="steps-nav">
+    <button class="step-btn active" onclick="goStep(0)" id="sb0">
+      <span class="num">✨</span><span class="label">Prompt</span>
+    </button>
+    <button class="step-btn" onclick="goStep(1)" id="sb1">
+      <span class="num">1</span><span class="label">Einstellungen</span>
+    </button>
+    <button class="step-btn" onclick="goStep(2)" id="sb2">
+      <span class="num">2</span><span class="label">Bilder</span>
+    </button>
+    <button class="step-btn" onclick="goStep(3)" id="sb3">
+      <span class="num">3</span><span class="label">Branding</span>
+    </button>
+    <button class="step-btn" onclick="goStep(4)" id="sb4">
+      <span class="num">4</span><span class="label">PDF erstellen</span>
+    </button>
   </nav>
 
-  <!-- STEP 0: Prompt Generator -->
-  <div class="sec on" id="s0">
+  <!-- ═══════════ STEP 0: Prompt Generator ═══════════ -->
+  <div class="section active" id="step0">
     <div class="card">
-      <div class="ctitle">🎨 Prompt-Generator für ChatGPT</div>
-      <p style="color:rgba(255,255,255,0.55);font-size:14px;margin-bottom:20px;line-height:1.6">Wähle deine Optionen — der fertige Prompt wird automatisch generiert. Kopieren und in ChatGPT einfügen!</p>
+      <div class="card-title">🎨 Prompt-Generator für ChatGPT</div>
+      <p style="color:rgba(255,255,255,0.55);font-size:14px;margin-bottom:24px;line-height:1.6">
+        Wähle unten deine Optionen aus — der fertige Prompt wird automatisch generiert. Einfach kopieren und in ChatGPT einfügen!
+      </p>
 
+      <!-- Thema -->
       <label>Thema / Motiv</label>
-      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px" id="chips-thema">
-        <div class="chip on" data-g="thema" data-v="different owl species, each in a unique natural setting" onclick="selChip(this)">🦉 Eulen & UHUs</div>
-        <div class="chip" data-g="thema" data-v="stunning mountain landscapes across all four seasons" onclick="selChip(this)">🏔️ Berge</div>
-        <div class="chip" data-g="thema" data-v="wild animals of central Europe in their natural habitat" onclick="selChip(this)">🦊 Wildtiere</div>
-        <div class="chip" data-g="thema" data-v="beautiful wildflowers and botanical illustrations" onclick="selChip(this)">🌸 Blumen</div>
-        <div class="chip" data-g="thema" data-v="tranquil forest landscapes through the seasons" onclick="selChip(this)">🌲 Wälder</div>
-        <div class="chip" data-g="thema" data-v="European birds of prey in dramatic poses" onclick="selChip(this)">🦅 Greifvögel</div>
-        <div class="chip" data-g="thema" data-v="serene lake and river landscapes" onclick="selChip(this)">🏞️ Seen</div>
-        <div class="chip" data-g="thema" data-v="ancient castles and ruins in European landscapes" onclick="selChip(this)">🏰 Burgen</div>
-      </div>
-
-      <label>Bildstil</label>
-      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px" id="chips-stil">
-        <div class="chip on" data-g="stil" data-v="photorealistic, professional photography" onclick="selChip(this)">📷 Fotorealistisch</div>
-        <div class="chip" data-g="stil" data-v="soft watercolor painting, delicate brushstrokes" onclick="selChip(this)">🎨 Aquarell</div>
-        <div class="chip" data-g="stil" data-v="rich oil painting style, classical art" onclick="selChip(this)">🖼️ Ölgemälde</div>
-        <div class="chip" data-g="stil" data-v="detailed pencil sketch on aged paper, sepia tones" onclick="selChip(this)">✏️ Bleistift</div>
-      </div>
-
-      <label>Stimmung</label>
-      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px" id="chips-mood">
-        <div class="chip on" data-g="mood" data-v="dramatic natural lighting, moody atmosphere" onclick="selChip(this)">🌩️ Dramatisch</div>
-        <div class="chip" data-g="mood" data-v="warm golden hour light" onclick="selChip(this)">🌅 Goldene Stunde</div>
-        <div class="chip" data-g="mood" data-v="misty morning atmosphere, ethereal fog" onclick="selChip(this)">🌫️ Mystisch</div>
-        <div class="chip" data-g="mood" data-v="bright sunny daylight, vivid colors" onclick="selChip(this)">☀️ Sonnig</div>
-        <div class="chip" data-g="mood" data-v="cold winter light, frosty and serene" onclick="selChip(this)">❄️ Winterlich</div>
-        <div class="chip" data-g="mood" data-v="twilight blue hour, calm and peaceful" onclick="selChip(this)">🌙 Dämmerung</div>
-      </div>
-
-      <label>Farbpalette</label>
-      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px" id="chips-farbe">
-        <div class="chip on" data-g="farbe" data-v="natural true-to-life colors" onclick="selChip(this)">🎨 Natürlich</div>
-        <div class="chip" data-g="farbe" data-v="warm sepia and brown tones" onclick="selChip(this)">🟤 Sepia</div>
-        <div class="chip" data-g="farbe" data-v="cool blue and grey tones" onclick="selChip(this)">🔵 Kühles Blau</div>
-        <div class="chip" data-g="farbe" data-v="warm golden and amber tones" onclick="selChip(this)">🟡 Warmes Gold</div>
-        <div class="chip" data-g="farbe" data-v="black and white, high contrast monochrome" onclick="selChip(this)">⬛ Schwarz-Weiß</div>
-        <div class="chip" data-g="farbe" data-v="rich autumn earthy tones, reds and oranges" onclick="selChip(this)">🍂 Herbst-Töne</div>
-      </div>
-
-      <label>Extras (mehrere möglich)</label>
-      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px" id="chips-extra">
-        <div class="chip-toggle on" data-k="notext" onclick="toggleExtra(this)">🚫 Kein Text</div>
-        <div class="chip-toggle on" data-k="hires" onclick="toggleExtra(this)">🔍 Hochauflösend</div>
-        <div class="chip-toggle" data-k="consistent" onclick="toggleExtra(this)">✅ Einheitlicher Stil</div>
-        <div class="chip-toggle" data-k="closeup" onclick="toggleExtra(this)">🔬 Nahaufnahme</div>
-        <div class="chip-toggle" data-k="wildlife" onclick="toggleExtra(this)">🌿 Wildnis-Setting</div>
-        <div class="chip-toggle" data-k="seasons" onclick="toggleExtra(this)">🍃 4 Jahreszeiten</div>
-        <div class="chip-toggle" data-k="vertical" onclick="toggleExtra(this)">📱 Hochformat</div>
-      </div>
-
-      <label>KI-Tool</label>
-      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px" id="chips-tool">
-        <div class="chip on" data-g="tool" data-v="chatgpt" onclick="selChip(this)">💬 ChatGPT / DALL-E</div>
-        <div class="chip" data-g="tool" data-v="midjourney" onclick="selChip(this)">🎭 Midjourney</div>
-        <div class="chip" data-g="tool" data-v="stable" onclick="selChip(this)">🖥️ Stable Diffusion</div>
-        <div class="chip" data-g="tool" data-v="adobe" onclick="selChip(this)">🅰️ Adobe Firefly</div>
-        <div class="chip" data-g="tool" data-v="ideogram" onclick="selChip(this)">💡 Ideogram</div>
+      <div class="chip-group" id="chips-thema">
+        <div class="chip active" data-group="thema" data-val="different owl species, each in a unique natural setting" onclick="selChip(this)">🦉 Eulen & UHUs</div>
+        <div class="chip" data-group="thema" data-val="stunning mountain landscapes across all four seasons" onclick="selChip(this)">🏔️ Berge</div>
+        <div class="chip" data-group="thema" data-val="wild animals of central Europe in their natural habitat" onclick="selChip(this)">🦊 Wildtiere</div>
+        <div class="chip" data-group="thema" data-val="beautiful wildflowers and botanical illustrations" onclick="selChip(this)">🌸 Blumen</div>
+        <div class="chip" data-group="thema" data-val="tranquil forest landscapes through the seasons" onclick="selChip(this)">🌲 Wälder</div>
+        <div class="chip" data-group="thema" data-val="European birds of prey in dramatic poses" onclick="selChip(this)">🦅 Greifvögel</div>
+        <div class="chip" data-group="thema" data-val="serene lake and river landscapes" onclick="selChip(this)">🏞️ Seen</div>
+        <div class="chip" data-group="thema" data-val="macro photography of insects and small creatures" onclick="selChip(this)">🦋 Insekten</div>
+        <div class="chip" data-group="thema" data-val="vintage botanical prints of herbs and plants" onclick="selChip(this)">🌿 Kräuter</div>
+        <div class="chip" data-group="thema" data-val="ancient castles and ruins in European landscapes" onclick="selChip(this)">🏰 Burgen</div>
       </div>
 
       <div class="sep"></div>
+
+      <!-- Stil -->
+      <label>Bildstil</label>
+      <div class="chip-group" id="chips-stil">
+        <div class="chip active" data-group="stil" data-val="photorealistic, professional wildlife photography" onclick="selChip(this)">📷 Fotorealistisch</div>
+        <div class="chip" data-group="stil" data-val="detailed pencil sketch on aged paper, sepia tones" onclick="selChip(this)">✏️ Bleistiftzeichnung</div>
+        <div class="chip" data-group="stil" data-val="soft watercolor painting, delicate brushstrokes" onclick="selChip(this)">🎨 Aquarell</div>
+        <div class="chip" data-group="stil" data-val="rich oil painting style, classical art" onclick="selChip(this)">🖼️ Ölgemälde</div>
+        <div class="chip" data-group="stil" data-val="digital art, vibrant colors, sharp details" onclick="selChip(this)">💻 Digital Art</div>
+        <div class="chip" data-group="stil" data-val="vintage engraving illustration, antique print style" onclick="selChip(this)">📜 Vintage Gravur</div>
+        <div class="chip" data-group="stil" data-val="minimalist line art, clean black outlines" onclick="selChip(this)">〇 Line Art</div>
+      </div>
+
+      <div class="sep"></div>
+
+      <!-- Stimmung -->
+      <label>Stimmung & Licht</label>
+      <div class="chip-group" id="chips-mood">
+        <div class="chip active" data-group="mood" data-val="dramatic natural lighting, moody atmosphere" onclick="selChip(this)">🌩️ Dramatisch</div>
+        <div class="chip" data-group="mood" data-val="warm golden hour light, soft and inviting" onclick="selChip(this)">🌅 Goldene Stunde</div>
+        <div class="chip" data-group="mood" data-val="misty morning atmosphere, ethereal fog" onclick="selChip(this)">🌫️ Mystisch</div>
+        <div class="chip" data-group="mood" data-val="bright sunny daylight, vivid colors" onclick="selChip(this)">☀️ Sonnig</div>
+        <div class="chip" data-group="mood" data-val="cold winter light, frosty and serene" onclick="selChip(this)">❄️ Winterlich</div>
+        <div class="chip" data-group="mood" data-val="twilight blue hour, calm and peaceful" onclick="selChip(this)">🌙 Dämmerung</div>
+      </div>
+
+      <div class="sep"></div>
+
+      <!-- Farbe -->
+      <label>Farbpalette</label>
+      <div class="chip-group" id="chips-farbe">
+        <div class="chip active" data-group="farbe" data-val="natural true-to-life colors" onclick="selChip(this)">🎨 Natürlich</div>
+        <div class="chip" data-group="farbe" data-val="warm sepia and brown tones" onclick="selChip(this)">🟤 Sepia</div>
+        <div class="chip" data-group="farbe" data-val="cool blue and grey tones" onclick="selChip(this)">🔵 Kühles Blau</div>
+        <div class="chip" data-group="farbe" data-val="warm golden and amber tones" onclick="selChip(this)">🟡 Warmes Gold</div>
+        <div class="chip" data-group="farbe" data-val="black and white, high contrast monochrome" onclick="selChip(this)">⬛ Schwarz-Weiß</div>
+        <div class="chip" data-group="farbe" data-val="rich autumn earthy tones, reds and oranges" onclick="selChip(this)">🍂 Herbst-Töne</div>
+      </div>
+
+      <div class="sep"></div>
+
+      <!-- Extras -->
+      <label>Extras (mehrere möglich)</label>
+      <div class="chip-group" id="chips-extra">
+        <div class="chip toggle" data-key="consistent" onclick="toggleExtra(this)">✅ Einheitlicher Stil</div>
+        <div class="chip toggle active" data-key="notext" onclick="toggleExtra(this)">🚫 Kein Text</div>
+        <div class="chip toggle active" data-key="hires" onclick="toggleExtra(this)">🔍 Hochauflösend</div>
+        <div class="chip toggle" data-key="noborder" onclick="toggleExtra(this)">⬜ Keine Rahmen</div>
+        <div class="chip toggle" data-key="closeup" onclick="toggleExtra(this)">🔬 Nahaufnahme</div>
+        <div class="chip toggle" data-key="wildlife" onclick="toggleExtra(this)">🌿 Wildnis-Setting</div>
+      </div>
+
+      <div class="sep"></div>
+
+      <!-- Generated Prompt -->
       <label>Generierter Prompt</label>
       <div style="position:relative">
-        <textarea id="prompt-out" rows="6" readonly style="background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.18);border-radius:9px;color:#fff;padding:14px;font-size:13px;line-height:1.7;width:100%;resize:none;font-family:'DM Sans',sans-serif"></textarea>
-        <button onclick="copyPrompt()" id="copybtn" style="position:absolute;top:10px;right:10px;background:var(--red);border:none;color:white;padding:5px 12px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;font-family:'DM Sans',sans-serif">📋 Kopieren</button>
+        <textarea id="prompt-output" rows="5" readonly
+          style="background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.20);border-radius:10px;
+                 color:#fff;padding:16px;font-size:13px;line-height:1.7;width:100%;resize:none;
+                 font-family:'Source Sans 3',sans-serif"></textarea>
+        <button onclick="copyPrompt()" id="copy-btn"
+          style="position:absolute;top:10px;right:10px;background:var(--red);border:none;
+                 color:white;padding:6px 14px;border-radius:6px;cursor:pointer;
+                 font-size:12px;font-weight:600;font-family:'Source Sans 3',sans-serif;transition:all 0.2s">
+          📋 Kopieren
+        </button>
       </div>
-      <div class="btnrow">
-        <button class="btn btn-out" onclick="buildPrompt()">🔄 Neu generieren</button>
-        <button class="btn btn-red" onclick="go(1)">Weiter → Einstellungen</button>
+
+      <div class="info-box" style="margin-top:12px">
+        <strong>So geht's:</strong> Prompt kopieren → ChatGPT öffnen → Prompt einfügen → Bild generieren lassen → Als JPG/PNG speichern → Hier hochladen 🚀
+        <br><br>
+        <strong>Wichtig:</strong> Du brauchst <strong>12 einzelne Bilder</strong>, eines pro Monat.
+        Nutze den Prompt also zwölfmal und ändere jedes Mal das Motiv oder die Jahreszeit.
+        Ein einzelnes Bild mit zwölf Motiven darin wird beim Druck unscharf.
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-outline" onclick="buildPrompt()">🔄 Prompt neu generieren</button>
+        <button class="btn btn-primary" onclick="goStep(1)">Weiter → Einstellungen</button>
       </div>
     </div>
   </div>
 
-  <!-- STEP 1: Einstellungen -->
-  <div class="sec" id="s1">
+  <!-- ═══════════ STEP 1: Einstellungen ═══════════ -->
+  <div class="section active" id="step1">
     <div class="card">
-      <div class="ctitle">Kalender-Einstellungen</div>
-      <div class="row">
-        <div><label>Jahr</label><input type="number" id="year" value="2027" min="2024" max="2035"></div>
-        <div><label>Kalender-Titel</label><input type="text" id="title" value="Berge · Landschaften" placeholder="z.B. Berge · Landschaften"></div>
-      </div>
-      <div class="row">
+      <div class="card-title">Kalender-Einstellungen</div>
+      <div class="form-row">
         <div>
-          <label>Bundesland / Region (Feiertage)</label>
-          <select id="land">
-            <optgroup label="── Deutschland ──────────">
-              <option value="bundesweit">🇩🇪 Bundesweit (gemeinsame)</option>
+          <label>Jahr</label>
+          <input type="number" id="cal-year" value="2027" min="2024" max="2035">
+        </div>
+        <div>
+          <label>Kalender-Titel (Motiv)</label>
+          <input type="text" id="cal-title" placeholder="z.B. Berge · Landschaften" value="Berge · Landschaften">
+        </div>
+      </div>
+      <div class="form-row">
+        <div>
+          <label>Bundesland (Feiertage)</label>
+          <select id="bundesland">
+            <optgroup label="── Deutschland ──────────────">
+              <option value="bundesweit">🇩🇪 Bundesweit (nur gemeinsame)</option>
               <option value="bw">Baden-Württemberg</option>
               <option value="bayern">Bayern</option>
               <option value="berlin">Berlin</option>
@@ -261,778 +665,941 @@ footer{text-align:center;padding:18px;color:rgba(255,255,255,0.2);font-size:12px
               <option value="bremen">Bremen</option>
               <option value="hamburg">Hamburg</option>
               <option value="hessen">Hessen</option>
-              <option value="mv">Mecklenburg-Vorpommern</option>
+              <option value="mecklenburg-vorpommern">Mecklenburg-Vorpommern</option>
               <option value="niedersachsen">Niedersachsen</option>
               <option value="nrw">Nordrhein-Westfalen</option>
-              <option value="rp">Rheinland-Pfalz</option>
+              <option value="rheinland-pfalz">Rheinland-Pfalz</option>
               <option value="saarland">Saarland</option>
               <option value="sachsen" selected>Sachsen</option>
               <option value="sachsen-anhalt">Sachsen-Anhalt</option>
-              <option value="sh">Schleswig-Holstein</option>
+              <option value="schleswig-holstein">Schleswig-Holstein</option>
               <option value="thueringen">Thüringen</option>
             </optgroup>
-            <optgroup label="── Österreich ───────────">
-              <option value="at">🇦🇹 Österreich (bundesweit)</option>
-              <option value="at-wien">Wien</option>
-              <option value="at-tirol">Tirol</option>
-              <option value="at-sbg">Salzburg</option>
-              <option value="at-stmk">Steiermark</option>
+            <optgroup label="── Österreich ───────────────">
+              <option value="oesterreich">🇦🇹 Österreich (bundesweit)</option>
+              <option value="oesterreich-wien">Österreich – Wien</option>
+              <option value="oesterreich-tirol">Österreich – Tirol</option>
+              <option value="oesterreich-sbg">Österreich – Salzburg</option>
+              <option value="oesterreich-stmk">Österreich – Steiermark</option>
             </optgroup>
           </select>
         </div>
         <div>
-          <label>Akzentfarbe</label>
-          <div class="colors" id="cols" style="margin-top:8px">
-            <div class="col on" style="background:#d40d0d" data-c="#d40d0d" onclick="setCol(this)" title="Rot"></div>
-            <div class="col" style="background:#1a6b3a" data-c="#1a6b3a" onclick="setCol(this)" title="Grün"></div>
-            <div class="col" style="background:#1a3a7a" data-c="#1a3a7a" onclick="setCol(this)" title="Navy"></div>
-            <div class="col" style="background:#7a1a7a" data-c="#7a1a7a" onclick="setCol(this)" title="Lila"></div>
-            <div class="col" style="background:#c8a84b" data-c="#c8a84b" onclick="setCol(this)" title="Gold"></div>
-            <div class="col" style="background:#c86a10" data-c="#c86a10" onclick="setCol(this)" title="Orange"></div>
-            <div class="col" style="background:#2a8a8a" data-c="#2a8a8a" onclick="setCol(this)" title="Türkis"></div>
-            <div class="col" style="background:#8a2a2a" data-c="#8a2a2a" onclick="setCol(this)" title="Dunkelrot"></div>
-          </div>
+          <label>Format</label>
+          <select id="cal-format">
+            <option value="a4">A4 Hochformat (210×297mm)</option>
+            <option value="a4l">A4 Querformat</option>
+            <option value="a3">A3 Hochformat (297×420mm)</option>
+          </select>
         </div>
-      </div>
-      <div class="btnrow"><button class="btn btn-red" onclick="go(2)">Weiter → Bilder</button></div>
-    </div>
-  </div>
-
-  <!-- STEP 2: Bilder -->
-  <div class="sec" id="s2">
-    <div class="card">
-      <div class="ctitle">Bilder hochladen</div>
-      <div class="modebtns">
-        <button class="mbtn on" id="mb0" onclick="setMode('collage')">📋 Collage (4×3 Raster)<br><small style="font-weight:400;color:rgba(255,255,255,0.4)">automatisch aufteilen</small></button>
-        <button class="mbtn" id="mb1" onclick="setMode('single')">🖼️ 12 Einzelbilder<br><small style="font-weight:400;color:rgba(255,255,255,0.4)">ein Bild pro Monat</small></button>
-      </div>
-
-      <!-- Collage -->
-      <div id="czone">
-        <div class="dropzone" id="cdrop">
-          <input type="file" accept="image/*" onchange="loadCollage(this.files[0])">
-          <div class="dicon">🏔️</div>
-          <div class="dtxt">Collage-Bild ablegen oder klicken</div>
-          <div class="dhint">JPG / PNG · 4 Spalten × 3 Zeilen = 12 Bilder</div>
-        </div>
-        <div id="cprev" style="display:none">
-          <div class="info" id="cinfo"></div>
-          <div class="thumbrow" id="cthumbs"></div>
-        </div>
-      </div>
-
-      <!-- Single -->
-      <div id="szone" style="display:none">
-        <div class="info"><strong>Klicke auf jeden Monat</strong> um ein Bild hochzuladen.</div>
-        <div class="slots" id="slotgrid" style="margin-top:14px"></div>
-      </div>
-
-      <div class="btnrow">
-        <button class="btn btn-out" onclick="go(1)">← Zurück</button>
-        <button class="btn btn-red" id="btn2" onclick="go(3)" disabled>Weiter → Branding</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- STEP 3: Branding -->
-  <div class="sec" id="s3">
-    <div class="card">
-      <div class="ctitle">Branding & Impressum</div>
-      <div class="row">
-        <div><label>Brand-Name (Deckblatt)</label><input type="text" id="brand" placeholder="z.B. Sachsenstyle"></div>
-        <div><label>Social Media Handle</label><input type="text" id="social" placeholder="z.B. @sachsenstyle"></div>
       </div>
       <div class="sep"></div>
-      <div class="ctitle">Impressum (Rückseite)</div>
-      <div class="row">
-        <div><label>Name</label><input type="text" id="iname" placeholder="Vor- und Nachname"></div>
-        <div><label>Straße + Nr.</label><input type="text" id="istr" placeholder="Musterstraße 1"></div>
+      <div class="card-title">Design</div>
+      <div style="display:flex;gap:12px;flex-wrap:wrap">
+        <div class="design-opt selected" data-design="hell" onclick="selDesign(this)"
+             style="flex:1;min-width:190px;cursor:pointer;border-radius:10px;padding:14px;
+                    background:#ffffff;color:#2d2d2d;border:3px solid var(--red)">
+          <strong>Hell</strong><br>
+          <span style="font-size:13px">Weißer Hintergrund, dunkle Schrift.<br>Für den Druck empfohlen – spart Tinte, alles gut lesbar.</span>
+        </div>
+        <div class="design-opt" data-design="dunkel" onclick="selDesign(this)"
+             style="flex:1;min-width:190px;cursor:pointer;border-radius:10px;padding:14px;
+                    background:#2a2a1e;color:#f0f0e8;border:3px solid rgba(255,255,255,0.15)">
+          <strong>Dunkel</strong><br>
+          <span style="font-size:13px">Dunkler Hintergrund, helle Schrift.<br>Wirkt am Bildschirm edel, braucht beim Druck viel Tinte.</span>
+        </div>
       </div>
-      <div class="row tri">
-        <div><label>PLZ</label><input type="text" id="iplz" placeholder="01234"></div>
-        <div><label>Ort</label><input type="text" id="icity" placeholder="Musterstadt"></div>
-        <div><label>Telefon</label><input type="tel" id="itel" placeholder="+49 ..."></div>
+      <div class="sep"></div>
+      <div class="card-title">Akzent-Farbe</div>
+      <div class="color-options" id="color-opts">
+        <div class="color-opt selected" style="background:#d40d0d" data-col="#d40d0d" onclick="selColor(this)" title="Rot (Original)"></div>
+        <div class="color-opt" style="background:#1a6b3a" data-col="#1a6b3a" onclick="selColor(this)" title="Dunkelgrün"></div>
+        <div class="color-opt" style="background:#1a3a7a" data-col="#1a3a7a" onclick="selColor(this)" title="Navy"></div>
+        <div class="color-opt" style="background:#7a1a7a" data-col="#7a1a7a" onclick="selColor(this)" title="Lila"></div>
+        <div class="color-opt" style="background:#c8a84b" data-col="#c8a84b" onclick="selColor(this)" title="Gold"></div>
+        <div class="color-opt" style="background:#c86a10" data-col="#c86a10" onclick="selColor(this)" title="Orange"></div>
+        <div class="color-opt" style="background:#2a8a8a" data-col="#2a8a8a" onclick="selColor(this)" title="Türkis"></div>
+        <div class="color-opt" style="background:#8a2a2a" data-col="#8a2a2a" onclick="selColor(this)" title="Dunkelrot"></div>
       </div>
-      <div class="row full">
-        <div><label>E-Mail</label><input type="email" id="imail" placeholder="deine@email.de"></div>
+      <div class="info-box" style="margin-top:16px">
+        <strong>Tipp:</strong> Die Akzentfarbe wird für den Monatsnamen, Sonn- und Feiertage sowie den Rand verwendet.
       </div>
-      <div class="btnrow">
-        <button class="btn btn-out" onclick="go(1)">← Zurück</button>
-        <button class="btn btn-red" onclick="go(4)">Weiter → PDF erstellen</button>
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="goStep(2)">Weiter → Bilder</button>
       </div>
     </div>
   </div>
 
-  <!-- STEP 4: PDF -->
-  <div class="sec" id="s4">
+  <!-- ═══════════ STEP 2: Bilder ═══════════ -->
+  <div class="section" id="step2">
     <div class="card">
-      <div class="ctitle">PDF erstellen</div>
-      <div class="sumgrid">
-        <div class="sumbox"><div class="sumlabel">Kalender</div><div class="sumval" id="stitle">–</div><div class="sumsub" id="syear">–</div></div>
-        <div class="sumbox"><div class="sumlabel">Bilder</div><div class="sumval" id="simgs">–</div><div class="sumsub" id="sfmt">A4 Hochformat</div></div>
-        <div class="sumbox"><div class="sumlabel">Feiertage</div><div class="sumval" id="sland">–</div></div>
-        <div class="sumbox"><div class="sumlabel">Branding</div><div class="sumval" id="sbrand">–</div></div>
+      <div class="card-title">Bilder hochladen</div>
+
+      <!-- 12 Single Slots -->
+      <div id="single-zone">
+        <div class="info-box">
+          <strong>Klicke auf jeden Monat</strong> um das Bild hochzuladen. JPG oder PNG.
+          <br><br>
+          Für einen scharfen A4-Druck sollte jedes Bild mindestens <strong>2000 Pixel breit</strong> sein.
+          Bilder aus einer 12er-Collage sind dafür zu klein und werden beim Druck unscharf.
+        </div>
+        <div class="slots-grid" id="slots-grid" style="margin-top:16px"></div>
       </div>
-      <div class="info"><strong>Deckblatt</strong> + 12 Monatsseiten + Rückseite · alle Feiertage markiert</div>
-      <div style="text-align:center;margin-top:28px">
-        <button class="btn btn-gold" id="btnpdf" onclick="makePDF()">🖨️ &nbsp; Kalender als PDF herunterladen</button>
+
+      <div class="btn-row">
+        <button class="btn btn-outline" onclick="goStep(1)">← Zurück</button>
+        <button class="btn btn-primary" onclick="goStep(3)" id="btn-to-3" disabled>Weiter → Branding</button>
       </div>
-      <div class="btnrow" style="justify-content:flex-start;margin-top:12px">
-        <button class="btn btn-out" onclick="go(2)">← Zurück</button>
+    </div>
+  </div>
+
+  <!-- ═══════════ STEP 3: Branding ═══════════ -->
+  <div class="section" id="step3">
+    <div class="card">
+      <div class="card-title">Branding & Impressum</div>
+      <div class="form-row">
+        <div>
+          <label>Brand-Name (Deckblatt)</label>
+          <input type="text" id="brand-name" value="" placeholder="z.B. Sachsenstyle">
+        </div>
+        <div>
+          <label>Social Media Handle</label>
+          <input type="text" id="brand-social" value="" placeholder="z.B. sachsenstyle">
+        </div>
+      </div>
+      <div class="sep"></div>
+      <div class="card-title">Impressum (Rückseite)</div>
+      <div class="form-row">
+        <div>
+          <label>Vor- und Nachname</label>
+          <input type="text" id="imp-name" value="" placeholder="Vor- und Nachname">
+        </div>
+        <div>
+          <label>Straße + Hausnummer</label>
+          <input type="text" id="imp-street" value="" placeholder="Straße und Hausnummer">
+        </div>
+      </div>
+      <div class="form-row thirds">
+        <div>
+          <label>PLZ</label>
+          <input type="text" id="imp-plz" value="" placeholder="PLZ">
+        </div>
+        <div>
+          <label>Ort</label>
+          <input type="text" id="imp-city" value="" placeholder="Stadt">
+        </div>
+        <div>
+          <label>Telefon</label>
+          <input type="tel" id="imp-tel" value="" placeholder="z.B. +49 123 456789">
+        </div>
+      </div>
+      <div class="form-row">
+        <div>
+          <label>E-Mail</label>
+          <input type="email" id="imp-email" value="" placeholder="deine@email.de">
+        </div>
+        <div></div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-outline" onclick="goStep(2)">← Zurück</button>
+        <button class="btn btn-primary" onclick="goStep(4)">Weiter → PDF erstellen</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ STEP 4: PDF ═══════════ -->
+  <div class="section" id="step4">
+    <div class="card">
+      <div class="card-title">Kalender als PDF erstellen</div>
+
+      <!-- Summary -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:24px">
+        <div style="background:rgba(0,0,0,0.2);border-radius:10px;padding:16px">
+          <div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:rgba(255,255,255,0.4);margin-bottom:8px">Kalender</div>
+          <div style="font-size:16px;font-weight:600" id="sum-title">–</div>
+          <div style="font-size:13px;color:rgba(255,255,255,0.5);margin-top:4px" id="sum-year">–</div>
+        </div>
+        <div style="background:rgba(0,0,0,0.2);border-radius:10px;padding:16px">
+          <div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:rgba(255,255,255,0.4);margin-bottom:8px">Bilder</div>
+          <div style="font-size:16px;font-weight:600" id="sum-images">–</div>
+          <div style="font-size:13px;color:rgba(255,255,255,0.5);margin-top:4px" id="sum-format">–</div>
+        </div>
+        <div style="background:rgba(0,0,0,0.2);border-radius:10px;padding:16px">
+          <div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:rgba(255,255,255,0.4);margin-bottom:8px">Feiertage</div>
+          <div style="font-size:14px;font-weight:600" id="sum-land">–</div>
+        </div>
+        <div style="background:rgba(0,0,0,0.2);border-radius:10px;padding:16px">
+          <div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:rgba(255,255,255,0.4);margin-bottom:8px">Branding</div>
+          <div style="font-size:14px;font-weight:600" id="sum-brand">–</div>
+        </div>
+      </div>
+
+      <div class="info-box">
+        <strong>Was du bekommst:</strong> Deckblatt + 12 Monatsseiten + Rückseite mit Impressum · professionelles Design · alle Feiertage markiert
+      </div>
+
+      <div style="text-align:center;margin-top:32px">
+        <button class="btn btn-gold" id="btn-generate" onclick="generatePDF()">
+          🖨️ &nbsp; Kalender als PDF herunterladen
+        </button>
+      </div>
+
+      <div class="btn-row" style="justify-content:flex-start;margin-top:16px">
+        <button class="btn btn-outline" onclick="goStep(3)">← Zurück</button>
       </div>
     </div>
   </div>
 
 </div>
+
 <footer>Kalender Generator Pro · Professional Edition</footer>
 
 <script>
-// ═══════════════════════════════════
-// CONSTANTS
-// ═══════════════════════════════════
-const MO = ['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
-const DA = ['MO','DI','MI','DO','FR','SA','SO'];
-const PW = 210, PH = 297; // A4 mm
-const SC = 5;              // px per mm → canvas 1050×1485
-const W  = PW*SC, H = PH*SC;
+// ═══════════════════════════════════════════════════════
+// GLOBAL STATE
+// ═══════════════════════════════════════════════════════
+const MONTHS_DE = ["Januar","Februar","März","April","Mai","Juni",
+                   "Juli","August","September","Oktober","November","Dezember"];
+const DAYS_DE   = ["MO","DI","MI","DO","FR","SA","SO"];
 
-// ═══════════════════════════════════
-// STATE
-// ═══════════════════════════════════
-const S = { imgs: new Array(12).fill(null), color: '#d40d0d', mode: 'collage' };
-
-// ═══════════════════════════════════
-// NAV
-// ═══════════════════════════════════
-function go(n) {
-  document.querySelectorAll('.sec').forEach((s,i) => s.classList.toggle('on', i===n));
-  document.querySelectorAll('.tab').forEach((t,i) => {
-    t.classList.remove('on','done');
-    if(i===n) t.classList.add('on');
-    else if(i<n) t.classList.add('done');
-  });
-  if(n===4) fillSum();
-}
-
-// ═══════════════════════════════════
-// COLOR
-// ═══════════════════════════════════
-function setCol(el) {
-  document.querySelectorAll('.col').forEach(c=>c.classList.remove('on'));
-  el.classList.add('on');
-  S.color = el.dataset.c;
-}
-
-// ═══════════════════════════════════
-// PROMPT GENERATOR
-// ═══════════════════════════════════
-const PD = {
-  thema: 'different owl species, each in a unique natural setting',
-  stil:  'photorealistic, professional photography',
-  mood:  'dramatic natural lighting, moody atmosphere',
-  farbe: 'natural true-to-life colors',
-  tool:  'chatgpt',
+let state = {
+  step: 0,
+  images: new Array(12).fill(null),
+  accentColor: '#d40d0d',
+  year: 2027,
+  design: 'hell',
 };
-const EXTRAS = {
-  notext:     { on:true,  txt:'no text, no labels, no watermarks' },
-  hires:      { on:true,  txt:'high resolution, ultra sharp details, 4K quality' },
-  consistent: { on:false, txt:'consistent style and color palette across all 12 cells' },
-  closeup:    { on:false, txt:'close-up portraits, subject fills the frame' },
-  wildlife:   { on:false, txt:'authentic wildlife setting, natural environment' },
-  seasons:    { on:false, txt:'show all four seasons across the 12 images' },
-  vertical:   { on:false, txt:'portrait orientation, vertical format preferred' },
+
+// Farbwerte je Design-Variante (hell = druckoptimiert, dunkel = Original)
+function theme() {
+  if(state.design === 'dunkel') {
+    return {
+      pageBg:    '#2a2a1e',
+      wmAlpha:   0.35,
+      wmVeil:    'rgba(40,40,28,0.55)',
+      textMain:  'rgba(255,255,255,0.92)',
+      lineHead:  'rgba(255,255,255,0.22)',
+      lineWeek:  'rgba(255,255,255,0.15)',
+      cardEdge:  'rgba(10,9,6,1.0)',
+      coverBg:   '#3d3d2e',
+      coverTile: 'rgba(10,10,6,0.68)',
+      coverVeil: 'rgba(58,58,44,0.40)',
+      coverText: 'rgba(255,255,255,0.82)',
+      coverDot:  'rgba(255,255,255,0.30)',
+      coverLine: 'rgba(255,255,255,0.18)',
+      backTile:  'rgba(5,5,3,0.80)',
+      backVeil:  'rgba(40,40,28,0.55)',
+      boxFill:   [20,20,14],
+      boxText:   [255,255,255],
+    };
+  }
+  return {
+    pageBg:    '#ffffff',
+    wmAlpha:   0.10,
+    wmVeil:    'rgba(255,255,255,0.55)',
+    textMain:  'rgba(45,45,45,1)',
+    lineHead:  'rgba(60,60,60,0.35)',
+    lineWeek:  'rgba(60,60,60,0.20)',
+    cardEdge:  'rgba(255,255,255,1.0)',
+    coverBg:   '#ffffff',
+    coverTile: 'rgba(255,255,255,0.62)',
+    coverVeil: 'rgba(255,255,255,0.30)',
+    coverText: 'rgba(45,45,45,1)',
+    coverDot:  'rgba(60,60,60,0.35)',
+    coverLine: 'rgba(60,60,60,0.25)',
+    backTile:  'rgba(255,255,255,0.72)',
+    backVeil:  'rgba(255,255,255,0.35)',
+    boxFill:   [255,255,255],
+    boxText:   [45,45,45],
+  };
+}
+
+function selDesign(el) {
+  document.querySelectorAll('.design-opt').forEach(d => {
+    d.classList.remove('selected');
+    d.style.border = '3px solid rgba(255,255,255,0.15)';
+  });
+  el.classList.add('selected');
+  el.style.border = '3px solid ' + state.accentColor;
+  state.design = el.dataset.design;
+  updateSummary();
+}
+
+// ═══════════════════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════════════════
+function goStep(n) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.getElementById('step' + n).classList.add('active');
+  const btns = document.querySelectorAll('.step-btn');
+  const stepIds = [0,1,2,3,4];
+  btns.forEach((b,i) => {
+    b.classList.remove('active','done');
+    if(stepIds[i] === n) b.classList.add('active');
+    else if(stepIds[i] < n) b.classList.add('done');
+  });
+  state.step = n;
+  if(n === 4) updateSummary();
+}
+
+// ═══════════════════════════════════════════════════════
+// PROMPT GENERATOR
+// ═══════════════════════════════════════════════════════
+const promptData = {
+  thema:  'different owl species, each in a unique natural setting',
+  stil:   'photorealistic, professional wildlife photography',
+  mood:   'dramatic natural lighting, moody atmosphere',
+  farbe:  'natural true-to-life colors',
+};
+const extras = {
+  consistent: { active: false, text: 'consistent style and color palette across all cells' },
+  notext:     { active: true,  text: 'no text, no labels, no watermarks' },
+  hires:      { active: true,  text: 'high resolution, sharp details' },
+  noborder:   { active: false, text: 'seamless grid, no visible borders between images' },
+  closeup:    { active: false, text: 'close-up portraits, subject fills the frame' },
+  wildlife:   { active: false, text: 'authentic wildlife setting, natural environment' },
 };
 
 function selChip(el) {
-  const g = el.dataset.g;
-  document.querySelectorAll(`.chip[data-g="${g}"]`).forEach(c=>c.classList.remove('on'));
-  el.classList.add('on');
-  PD[g] = el.dataset.v;
+  const group = el.dataset.group;
+  document.querySelectorAll(`.chip[data-group="${group}"]`).forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  promptData[group] = el.dataset.val;
   buildPrompt();
 }
 
 function toggleExtra(el) {
-  const k = el.dataset.k;
-  EXTRAS[k].on = !EXTRAS[k].on;
-  el.classList.toggle('on', EXTRAS[k].on);
+  const key = el.dataset.key;
+  extras[key].active = !extras[key].active;
+  el.classList.toggle('active', extras[key].active);
   buildPrompt();
 }
 
 function buildPrompt() {
-  const extraParts = Object.values(EXTRAS).filter(e=>e.on).map(e=>e.txt);
-  const extraStr = extraParts.length ? ' ' + extraParts.join(', ') + '.' : '';
-
-  let p = '';
-  if(PD.tool === 'midjourney') {
-    p = `/imagine prompt: 4x3 seamless photo grid, 12 individual images of ${PD.thema}, each cell shows a unique scene with different composition and angle, ${PD.stil}, ${PD.mood}, ${PD.farbe}, award-winning photography, National Geographic quality,${extraStr} NO borders NO white lines NO gaps between cells, each cell one complete standalone image, perfect for wall calendar splitting --ar 4:3 --v 6 --q 2 --style raw`;
-  } else if(PD.tool === 'stable') {
-    p = `(4x3 grid:1.4), 12 seamless individual images of ${PD.thema}, (each cell unique scene:1.3), (different angles:1.2), (no borders:1.8), (no white lines:1.8), (no gaps:1.8), (no grid lines:1.8), ${PD.stil}, ${PD.mood}, ${PD.farbe},${extraStr} each cell one complete standalone scene, professional calendar layout, award winning photography`;
-  } else if(PD.tool === 'adobe') {
-    p = `Create a precise 4 columns by 3 rows photo grid with exactly 12 individual images of ${PD.thema}. Each of the 12 cells must show a completely different scene, angle and composition. Style: ${PD.stil}. Lighting: ${PD.mood}. Colors: ${PD.farbe}.${extraStr} Absolutely no borders, no dividing lines, no white gaps, no grid lines between images. The images must be flush against each other. Professional quality suitable for printing as a wall calendar.`;
-  } else {
-    // ChatGPT / Ideogram - maximally detailed
-    p = `Create a 4x3 image collage grid (4 columns, 3 rows) with exactly 12 completely different images of ${PD.thema}.
-
-Each of the 12 cells must show:
-- A unique scene with different composition, angle and lighting
-- A fully composed, standalone image that works independently
-- ${PD.stil}
-- ${PD.mood}
-- Color palette: ${PD.farbe}
-${extraStr}
-CRITICAL TECHNICAL REQUIREMENTS:
-- NO borders, NO frames, NO white lines, NO grid lines, NO gaps between images
-- NO separating lines of any kind between cells
-- All 12 images must be flush against each other seamlessly
-- Each image must fill its cell completely with NO empty space
-- The result must look like 12 photos placed directly next to each other
-
-This will be used as a calendar photo sheet and split into 12 individual monthly images, so each must work perfectly as a standalone photo.`;
-  }
-
-  const el = document.getElementById('prompt-out');
-  if(el) el.value = p;
+  const extraParts = Object.values(extras).filter(e=>e.active).map(e=>e.text);
+  const extraStr = extraParts.length ? ', ' + extraParts.join(', ') : '';
+  const prompt =
+    `Create ONE single landscape-format image of ${promptData.thema}. ` +
+    `Style: ${promptData.stil}. ` +
+    `Mood and lighting: ${promptData.mood}. ` +
+    `Color palette: ${promptData.farbe}${extraStr}. ` +
+    `Aspect ratio 3:2, landscape orientation, highest available resolution (at least 1536 pixels wide). ` +
+    `One complete scene only – no grid, no collage, no split panels, no text, no borders.`;
+  document.getElementById('prompt-output').value = prompt;
 }
 
 function copyPrompt() {
-  const ta = document.getElementById('prompt-out');
-  ta.select(); document.execCommand('copy');
-  const btn = document.getElementById('copybtn');
-  btn.textContent='✅ Kopiert!'; btn.style.background='#2e7d32';
-  setTimeout(()=>{btn.textContent='📋 Kopieren';btn.style.background='var(--red)'},2000);
+  const ta = document.getElementById('prompt-output');
+  ta.select();
+  document.execCommand('copy');
+  const btn = document.getElementById('copy-btn');
+  btn.textContent = '✅ Kopiert!';
+  btn.style.background = '#2e7d32';
+  setTimeout(() => { btn.textContent = '📋 Kopieren'; btn.style.background = 'var(--red)'; }, 2000);
 }
 
+// Build initial prompt on load
 buildPrompt();
 
-// ═══════════════════════════════════
-// UPLOAD MODE
-// ═══════════════════════════════════
-function setMode(m) {
-  S.mode = m;
-  document.getElementById('mb0').classList.toggle('on', m==='collage');
-  document.getElementById('mb1').classList.toggle('on', m==='single');
-  document.getElementById('czone').style.display = m==='collage' ? '' : 'none';
-  document.getElementById('szone').style.display = m==='single' ? '' : 'none';
-  chkImgs();
+// ═══════════════════════════════════════════════════════
+// COLOR
+// ═══════════════════════════════════════════════════════
+function selColor(el) {
+  document.querySelectorAll('.color-opt').forEach(e => e.classList.remove('selected'));
+  el.classList.add('selected');
+  state.accentColor = el.dataset.col;
 }
 
-// ═══════════════════════════════════
-// COLLAGE
-// ═══════════════════════════════════
-function loadCollage(file) {
-  if(!file) return;
-  const rd = new FileReader();
-  rd.onload = e => {
-    const img = new Image();
-    img.onload = () => {
-      const cw = img.width/4, ch = img.height/3;
-      const thumbs = document.getElementById('cthumbs');
-      thumbs.innerHTML = '';
-      S.imgs = [];
-      for(let r=0;r<3;r++) for(let c=0;c<4;c++) {
-        const cv = document.createElement('canvas');
-        const trim = 3; // trim white border from collage grid lines
-        const sx = Math.round(c*cw) + trim, sy = Math.round(r*ch) + trim;
-        const sw = Math.round(cw) - 2*trim, sh = Math.round(ch) - 2*trim;
-        cv.width = sw; cv.height = sh;
-        cv.getContext('2d').drawImage(img, sx, sy, sw, sh, 0, 0, sw, sh);
-        const mi = new Image(); mi.src = cv.toDataURL('image/jpeg',0.92);
-        S.imgs.push(mi);
-        const td = document.createElement('div'); td.className='thumb';
-        const ti = document.createElement('img'); ti.src=mi.src;
-        td.appendChild(ti); thumbs.appendChild(td);
-      }
-      document.getElementById('cinfo').innerHTML = `<strong>✓ Collage geladen</strong> · ${img.width}×${img.height}px → 12 Bilder à ${Math.floor(cw)}×${Math.floor(ch)}px`;
-      document.getElementById('cprev').style.display = '';
-      chkImgs();
-    };
-    img.src = e.target.result;
-  };
-  rd.readAsDataURL(file);
-}
 
-// Drag & drop
-const cdrop = document.getElementById('cdrop');
-cdrop.addEventListener('dragover',e=>{e.preventDefault();cdrop.classList.add('over')});
-cdrop.addEventListener('dragleave',()=>cdrop.classList.remove('over'));
-cdrop.addEventListener('drop',e=>{e.preventDefault();cdrop.classList.remove('over');loadCollage(e.dataTransfer.files[0])});
-
-// ═══════════════════════════════════
+// ═══════════════════════════════════════════════════════
 // SINGLE SLOTS
-// ═══════════════════════════════════
-(function buildSlots() {
-  const grid = document.getElementById('slotgrid');
-  MO.forEach((m,i) => {
-    const sl = document.createElement('div'); sl.className='slot'; sl.id='sl'+i;
-    sl.innerHTML = `<input type="file" accept="image/*" onchange="loadSlot(${i},this.files[0])"><div class="sempty" id="se${i}">+</div><div class="slabel">${m}</div>`;
-    grid.appendChild(sl);
+// ═══════════════════════════════════════════════════════
+function buildSlots() {
+  const grid = document.getElementById('slots-grid');
+  grid.innerHTML = '';
+  state.images = new Array(12).fill(null);
+  MONTHS_DE.forEach((m,i) => {
+    const slot = document.createElement('div');
+    slot.className = 'slot';
+    slot.id = 'slot-'+i;
+    slot.innerHTML = `
+      <input type="file" accept="image/*" onchange="loadSlot(${i}, this.files[0])">
+      <div class="slot-empty" id="slot-empty-${i}"><span>+</span></div>
+      <div class="slot-label">${m}</div>
+    `;
+    grid.appendChild(slot);
   });
-})();
+}
 
-function loadSlot(i, file) {
+function loadSlot(idx, file) {
   if(!file) return;
-  const rd = new FileReader();
-  rd.onload = e => {
+  const reader = new FileReader();
+  reader.onload = e => {
     const img = new Image();
     img.onload = () => {
-      S.imgs[i] = img;
-      const sl = document.getElementById('sl'+i);
-      let im = sl.querySelector('img.si');
-      if(!im) { im=document.createElement('img'); im.className='si'; sl.insertBefore(im, sl.querySelector('.slabel')); document.getElementById('se'+i).style.display='none'; }
-      im.src = e.target.result;
-      im.style.cssText='width:100%;height:100%;object-fit:cover;position:absolute;inset:0';
-      chkImgs();
+      state.images[idx] = img;
+      const slot = document.getElementById('slot-'+idx);
+      let imgEl = slot.querySelector('img.slot-img');
+      if(!imgEl) {
+        imgEl = document.createElement('img');
+        imgEl.className = 'slot-img';
+        slot.insertBefore(imgEl, slot.querySelector('.slot-label'));
+        document.getElementById('slot-empty-'+idx).style.display = 'none';
+      }
+      imgEl.src = e.target.result;
+      imgEl.style.cssText = 'width:100%;height:100%;object-fit:cover;position:absolute;inset:0';
+      checkImages();
     };
     img.src = e.target.result;
   };
-  rd.readAsDataURL(file);
+  reader.readAsDataURL(file);
 }
 
-function chkImgs() {
-  document.getElementById('btn2').disabled = !S.imgs.every(Boolean);
+function checkImages() {
+  const ok = state.images.every(img => img !== null);
+  document.getElementById('btn-to-3').disabled = !ok;
 }
 
-// ═══════════════════════════════════
+// Init slots
+buildSlots();
+
+// ═══════════════════════════════════════════════════════
 // HOLIDAYS
-// ═══════════════════════════════════
+// ═══════════════════════════════════════════════════════
 function easter(y) {
-  const a=y%19,b=Math.floor(y/100),c=y%100,d=Math.floor(b/4),e=b%4,f=Math.floor((b+8)/25),g=Math.floor((b-f+1)/3),h=(19*a+b-d-g+15)%30,i=Math.floor(c/4),k=c%4,l=(32+2*e+2*i-h-k)%7,m=Math.floor((a+11*h+22*l)/451),mo=Math.floor((h+l-7*m+114)/31),da=((h+l-7*m+114)%31)+1;
+  const a=y%19,b=Math.floor(y/100),c=y%100,d=Math.floor(b/4),e=b%4;
+  const f=Math.floor((b+8)/25),g=Math.floor((b-f+1)/3),h=(19*a+b-d-g+15)%30;
+  const i=Math.floor(c/4),k=c%4,l=(32+2*e+2*i-h-k)%7;
+  const m=Math.floor((a+11*h+22*l)/451);
+  const mo=Math.floor((h+l-7*m+114)/31);
+  const da=((h+l-7*m+114)%31)+1;
   return new Date(y,mo-1,da);
 }
-function ad(d,n){const r=new Date(d);r.setDate(r.getDate()+n);return r}
-function bbt(y){const d=new Date(y,10,23);const dow=d.getDay();const ls=new Date(y,10,23-( dow===0?7:dow));return ad(ls,-4)}
 
-function getHols(year, land) {
-  const E=easter(year), B=bbt(year);
-  const k=d=>`${d.getMonth()+1}-${d.getDate()}`;
-  const h={};
-  const base=[
-    [new Date(year,0,1),'Neujahr'],
-    [ad(E,-2),'Karfreitag'],
-    [ad(E,1),'Ostermontag'],
-    [new Date(year,4,1),'Tag der Arbeit'],
-    [ad(E,39),'Himmelfahrt'],
-    [ad(E,50),'Pfingstmontag'],
-    [new Date(year,9,3),'Tag d. Einheit'],
-    [new Date(year,11,25),'1. Weihnacht'],
-    [new Date(year,11,26),'2. Weihnacht'],
+function addDays(d,n){ const r=new Date(d); r.setDate(r.getDate()+n); return r; }
+
+function bussBettag(y) {
+  const nov23 = new Date(y,10,23);
+  const dow = nov23.getDay(); // 0=So
+  const toSun = dow===0 ? 0 : 7-dow;
+  const lastSun = new Date(y,10,23);
+  if(dow!==0) lastSun.setDate(23-(dow===0?0:dow));
+  // Last Sunday before Nov 23
+  const ls = new Date(y,10,23);
+  ls.setDate(23 - (dow===0?7:dow));
+  return addDays(ls,-4); // Wednesday before
+}
+
+function getHolidays(year, land) {
+  const E = easter(year);
+  const BBT = bussBettag(year);
+  const fmt = d => `${d.getMonth()+1}-${d.getDate()}`;
+  const hols = {};
+
+  const base = [
+    [new Date(year,0,1),   "Neujahr"],
+    [addDays(E,-2),        "Karfreitag"],
+    [addDays(E,1),         "Ostermontag"],
+    [new Date(year,4,1),   "Tag der Arbeit"],
+    [addDays(E,39),        "Himmelfahrt"],
+    [addDays(E,50),        "Pfingstmontag"],
+    [new Date(year,9,3),   "Tag d. Einheit"],
+    [new Date(year,11,25), "1. Weihnacht"],
+    [new Date(year,11,26), "2. Weihnacht"],
   ];
-  const FR=ad(E,60),AH=new Date(year,10,1),REF=new Date(year,9,31);
-  const HEI=new Date(year,0,6),MAR=new Date(year,7,15),FRA=new Date(year,2,8);
-  const KIN=new Date(year,8,20),NAT=new Date(year,9,26),STE=new Date(year,11,26);
-  const MEM=new Date(year,11,8),JOS=new Date(year,3,23);
-  const ex={
-    bundesweit:[],
-    berlin:[[FRA,'Int. Frauentag'],[new Date(year,4,8),'Tag d. Befreiung']],
-    brandenburg:[[REF,'Reformationstag']],
-    bremen:[[REF,'Reformationstag']],
-    hamburg:[[REF,'Reformationstag']],
-    hessen:[[FR,'Fronleichnam'],[REF,'Reformationstag']],
-    mv:[[REF,'Reformationstag']],
-    niedersachsen:[[REF,'Reformationstag']],
-    nrw:[[FR,'Fronleichnam'],[AH,'Allerheiligen']],
-    rp:[[FR,'Fronleichnam'],[MAR,'Mariä Himmelf.'],[AH,'Allerheiligen']],
-    saarland:[[FR,'Fronleichnam'],[MAR,'Mariä Himmelf.'],[AH,'Allerheiligen'],[REF,'Reformationstag']],
-    sachsen:[[REF,'Reformationstag'],[B,'Buß- u.Bettag']],
-    'sachsen-anhalt':[[HEI,'Heilige 3 Könige'],[REF,'Reformationstag']],
-    sh:[[REF,'Reformationstag']],
-    thueringen:[[FR,'Fronleichnam'],[REF,'Reformationstag'],[KIN,'Weltkindertag']],
-    bw:[[HEI,'Heilige 3 Könige'],[FR,'Fronleichnam'],[AH,'Allerheiligen']],
-    bayern:[[HEI,'Heilige 3 Könige'],[FR,'Fronleichnam'],[MAR,'Mariä Himmelf.'],[AH,'Allerheiligen'],[REF,'Reformationstag']],
-    at:[[HEI,'Heilige 3 Könige'],[JOS,'Josefitag'],[FR,'Fronleichnam'],[MAR,'Mariä Himmelf.'],[NAT,'Nationalfeiertag'],[AH,'Allerheiligen'],[MEM,'Mariä Empf.'],[STE,'Stephanstag']],
-    'at-wien':[[HEI,'Heilige 3 Könige'],[FR,'Fronleichnam'],[MAR,'Mariä Himmelf.'],[NAT,'Nationalfeiertag'],[AH,'Allerheiligen'],[MEM,'Mariä Empf.'],[STE,'Stephanstag']],
-    'at-tirol':[[HEI,'Heilige 3 Könige'],[JOS,'Josefitag'],[FR,'Fronleichnam'],[MAR,'Mariä Himmelf.'],[NAT,'Nationalfeiertag'],[AH,'Allerheiligen'],[MEM,'Mariä Empf.'],[STE,'Stephanstag']],
-    'at-sbg':[[HEI,'Heilige 3 Könige'],[FR,'Fronleichnam'],[MAR,'Mariä Himmelf.'],[NAT,'Nationalfeiertag'],[AH,'Allerheiligen'],[MEM,'Mariä Empf.'],[STE,'Stephanstag']],
-    'at-stmk':[[HEI,'Heilige 3 Könige'],[JOS,'Josefitag'],[FR,'Fronleichnam'],[MAR,'Mariä Himmelf.'],[NAT,'Nationalfeiertag'],[AH,'Allerheiligen'],[MEM,'Mariä Empf.'],[STE,'Stephanstag']],
+
+  // ── Abkürzungen ──────────────────────────────────────
+  const FR  = addDays(E,60);
+  const AH  = new Date(year,10,1);
+  const REF = new Date(year,9,31);
+  const HEI = new Date(year,0,6);
+  const MAR = new Date(year,7,15);
+  const FRA = new Date(year,2,8);
+  const KIN = new Date(year,8,20);
+  const NAT = new Date(year,9,26);
+  const STE = new Date(year,11,26);
+  const MEM = new Date(year,11,8);
+  const JOS = new Date(year,3,23);
+
+  const extras = {
+    // ── Deutschland ──────────────────────────────────
+    bundesweit:            [],
+    'berlin':              [[FRA,"Int. Frauentag"],[new Date(year,4,8),"Tag d. Befreiung"]],
+    'brandenburg':         [[REF,"Reformationstag"]],
+    'bremen':              [[REF,"Reformationstag"]],
+    'hamburg':             [[REF,"Reformationstag"]],
+    'hessen':              [[FR,"Fronleichnam"],[REF,"Reformationstag"]],
+    'mecklenburg-vorpommern': [[REF,"Reformationstag"]],
+    'niedersachsen':       [[REF,"Reformationstag"]],
+    'nrw':                 [[FR,"Fronleichnam"],[AH,"Allerheiligen"]],
+    'rheinland-pfalz':     [[FR,"Fronleichnam"],[MAR,"Mariä Himmelf."],[AH,"Allerheiligen"]],
+    'saarland':            [[FR,"Fronleichnam"],[MAR,"Mariä Himmelf."],[AH,"Allerheiligen"],[REF,"Reformationstag"]],
+    'sachsen':             [[REF,"Reformationstag"],[BBT,"Buß- u.Bettag"]],
+    'sachsen-anhalt':      [[HEI,"Heilige 3 Könige"],[REF,"Reformationstag"]],
+    'schleswig-holstein':  [[REF,"Reformationstag"]],
+    'thueringen':          [[FR,"Fronleichnam"],[REF,"Reformationstag"],[KIN,"Weltkindertag"]],
+    'bw':                  [[HEI,"Heilige 3 Könige"],[FR,"Fronleichnam"],[AH,"Allerheiligen"]],
+    'bayern':              [[HEI,"Heilige 3 Könige"],[FR,"Fronleichnam"],[MAR,"Mariä Himmelf."],[AH,"Allerheiligen"],[REF,"Reformationstag"]],
+    // ── Österreich ───────────────────────────────────
+    'oesterreich':         [[HEI,"Heilige 3 Könige"],[JOS,"Josefitag"],[FR,"Fronleichnam"],[MAR,"Mariä Himmelf."],[NAT,"Nationalfeiertag"],[AH,"Allerheiligen"],[MEM,"Mariä Empf."],[STE,"Stephanstag"]],
+    'oesterreich-wien':    [[HEI,"Heilige 3 Könige"],[FR,"Fronleichnam"],[MAR,"Mariä Himmelf."],[NAT,"Nationalfeiertag"],[AH,"Allerheiligen"],[MEM,"Mariä Empf."],[STE,"Stephanstag"]],
+    'oesterreich-tirol':   [[HEI,"Heilige 3 Könige"],[JOS,"Josefitag"],[FR,"Fronleichnam"],[MAR,"Mariä Himmelf."],[NAT,"Nationalfeiertag"],[AH,"Allerheiligen"],[MEM,"Mariä Empf."],[STE,"Stephanstag"]],
+    'oesterreich-sbg':     [[HEI,"Heilige 3 Könige"],[FR,"Fronleichnam"],[MAR,"Mariä Himmelf."],[NAT,"Nationalfeiertag"],[AH,"Allerheiligen"],[MEM,"Mariä Empf."],[STE,"Stephanstag"]],
+    'oesterreich-stmk':    [[HEI,"Heilige 3 Könige"],[JOS,"Josefitag"],[FR,"Fronleichnam"],[MAR,"Mariä Himmelf."],[NAT,"Nationalfeiertag"],[AH,"Allerheiligen"],[MEM,"Mariä Empf."],[STE,"Stephanstag"]],
   };
-  [...base,...(ex[land]||[])].forEach(([d,n])=>{h[k(d)]=n});
-  return h;
+
+  [...base, ...(extras[land]||[])].forEach(([d,n]) => {
+    hols[fmt(d)] = n;
+  });
+  return hols;
 }
 
-// ═══════════════════════════════════
-// CALENDAR GRID BUILDER
-// ═══════════════════════════════════
-function buildCal(year, month) {
-  const first=new Date(year,month-1,1), last=new Date(year,month,0).getDate();
-  let dow=first.getDay(); dow=dow===0?6:dow-1;
-  const weeks=[]; let week=new Array(7).fill(null); let d=1;
-  for(let i=dow;i<7&&d<=last;i++,d++) week[i]=d;
-  weeks.push(week);
-  while(d<=last){week=new Array(7).fill(null);for(let i=0;i<7&&d<=last;i++,d++)week[i]=d;weeks.push(week)}
-  return weeks;
+// ═══════════════════════════════════════════════════════
+// CANVAS HELPERS
+// ═══════════════════════════════════════════════════════
+function makeBackground(img, pxW, pxH, oliveHex) {
+  const cvs = document.createElement('canvas');
+  cvs.width = pxW; cvs.height = pxH;
+  const ctx = cvs.getContext('2d');
+
+  // 1. Bild skaliert zeichnen
+  ctx.drawImage(img, 0, 0, pxW, pxH);
+
+  // 2. Gleichmäßiger dunkler Overlay (etwas stärker als vorher)
+  ctx.fillStyle = 'rgba(0,0,0,0.65)';
+  ctx.fillRect(0, 0, pxW, pxH);
+
+  // 3. Gradient im unteren Bereich (Kalender-Zone): immer dunkel genug
+  //    Egal wie dunkel das Foto ist — der Kalender bleibt lesbar
+  const calZoneStart = pxH * 0.48;  // ab ~48% der Höhe dunkler werden
+  const grad = ctx.createLinearGradient(0, calZoneStart, 0, pxH);
+  grad.addColorStop(0, 'rgba(0,0,0,0)');
+  grad.addColorStop(1, 'rgba(0,0,0,0.55)');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, calZoneStart, pxW, pxH - calZoneStart);
+
+  // 4. Olive tint für Markenfarbe
+  const {r,g,b} = hexToRgb(oliveHex);
+  ctx.fillStyle = `rgba(${r},${g},${b},0.38)`;
+  ctx.fillRect(0, 0, pxW, pxH);
+
+  return cvs;
 }
 
-// ═══════════════════════════════════
-// CANVAS: draw one month page
-// Returns a canvas element (W×H pixels)
-// ═══════════════════════════════════
-function drawMonthCanvas(month, year, img, hols, accentHex) {
-  const cv  = document.createElement('canvas');
-  cv.width  = W; cv.height = H;
-  const ctx = cv.getContext('2d');
+// PDF-nativer Clip: abgerundetes Bild direkt im PDF – kein Canvas-Clip, keine Artefakte
+function roundedImagePDF(doc, imgData, x, y, w, h, r) {
+  const sf = doc.internal.scaleFactor;
+  const pH = doc.internal.pageSize.getHeight();
+  const k  = 0.5522848;
+  const L  = x*sf, R = (x+w)*sf;
+  const B  = (pH-y-h)*sf, T = (pH-y)*sf;
+  const rr = r*sf, kr = k*rr;
+  const f  = n => n.toFixed(3);
+  const path = [
+    `${f(L+rr)} ${f(B)} m`,
+    `${f(R-rr)} ${f(B)} l`,
+    `${f(R-rr+kr)} ${f(B)} ${f(R)} ${f(B+rr-kr)} ${f(R)} ${f(B+rr)} c`,
+    `${f(R)} ${f(T-rr)} l`,
+    `${f(R)} ${f(T-rr+kr)} ${f(R-rr+kr)} ${f(T)} ${f(R-rr)} ${f(T)} c`,
+    `${f(L+rr)} ${f(T)} l`,
+    `${f(L+rr-kr)} ${f(T)} ${f(L)} ${f(T-rr+kr)} ${f(L)} ${f(T-rr)} c`,
+    `${f(L)} ${f(B+rr)} l`,
+    `${f(L)} ${f(B+rr-kr)} ${f(L+rr-kr)} ${f(B)} ${f(L+rr)} ${f(B)} c`,
+    'h W n'
+  ].join('\n');
+  doc.saveGraphicsState();
+  doc.internal.write(path);
+  doc.addImage(imgData, 'JPEG', x, y, w, h);
+  doc.restoreGraphicsState();
+}
 
-  const hex2rgb = h => ({ r:parseInt(h.slice(1,3),16), g:parseInt(h.slice(3,5),16), b:parseInt(h.slice(5,7),16) });
-  const ac  = hex2rgb(accentHex);
+function hexToRgb(hex) {
+  const r = parseInt(hex.slice(1,3),16);
+  const g = parseInt(hex.slice(3,5),16);
+  const b = parseInt(hex.slice(5,7),16);
+  return {r,g,b};
+}
 
+function hex2rgb01(hex) {
+  const {r,g,b} = hexToRgb(hex);
+  return [r/255, g/255, b/255];
+}
+
+// ═══════════════════════════════════════════════════════
+// SUMMARY
+// ═══════════════════════════════════════════════════════
+function updateSummary() {
+  const yr = document.getElementById('cal-year').value;
+  const title = document.getElementById('cal-title').value;
+  const land = document.getElementById('bundesland').selectedOptions[0].text;
+  const fmt = document.getElementById('cal-format').selectedOptions[0].text;
+  const brand = document.getElementById('brand-name').value;
+  const loaded = state.images.filter(Boolean).length;
+  document.getElementById('sum-title').textContent = title || '(kein Titel)';
+  document.getElementById('sum-year').textContent = yr;
+  document.getElementById('sum-images').textContent = loaded + ' / 12 Bilder geladen';
+  document.getElementById('sum-format').textContent = fmt;
+  document.getElementById('sum-land').textContent = land;
+  document.getElementById('sum-brand').textContent = brand || '–';
+}
+
+// ═══════════════════════════════════════════════════════
+// PDF GENERATION
+// ═══════════════════════════════════════════════════════
+async function generatePDF() {
+  try {
+  const loaded = state.images.filter(Boolean).length;
+  if(loaded < 12) { alert('Bitte zuerst alle 12 Bilder hochladen!'); return; }
+
+  const { jsPDF } = window.jspdf;
+  const year   = parseInt(document.getElementById('cal-year').value);
+  const title  = document.getElementById('cal-title').value || 'Kalender';
+  const land   = document.getElementById('bundesland').value;
+  const fmt    = document.getElementById('cal-format').value;
+  const accent = state.accentColor;
+  const [ar,ag,ab] = hex2rgb01(accent);
+
+  const brandName   = document.getElementById('brand-name').value;
+  const brandSocial = document.getElementById('brand-social').value;
+  const impName     = document.getElementById('imp-name').value;
+  const impStreet   = document.getElementById('imp-street').value;
+  const impPlz      = document.getElementById('imp-plz').value;
+  const impCity     = document.getElementById('imp-city').value;
+  const impTel      = document.getElementById('imp-tel').value;
+  const impEmail    = document.getElementById('imp-email').value;
+
+  const holidays = getHolidays(year, land);
+
+  // Page size
+  let pw, ph, orientation;
+  if(fmt==='a4') { pw=210; ph=297; orientation='portrait'; }
+  else if(fmt==='a4l') { pw=297; ph=210; orientation='landscape'; }
+  else { pw=297; ph=420; orientation='portrait'; }
+
+  const doc = new jsPDF({ orientation, unit:'mm', format: fmt==='a3'?'a3':'a4' });
+  const SCALE = 3; // px per mm for canvas rendering
+
+  setLoader(true, 'Deckblatt wird erstellt…', 0);
+  await sleep(50);
+
+  // ── Deckblatt ────────────────────────────────────────
+  await drawCover(doc, pw, ph, year, title, brandName, accent, ar, ag, ab, SCALE);
+  setLoader(true, 'Monatsseiten werden erstellt…', 8);
+
+  // ── 12 Monate ────────────────────────────────────────
+  for(let m=0; m<12; m++) {
+    doc.addPage(fmt==='a3'?'a3':'a4', orientation);
+    await drawMonth(doc, pw, ph, m+1, year, state.images[m], holidays, accent, ar, ag, ab, SCALE);
+    setLoader(true, `${MONTHS_DE[m]} erstellt…`, 8 + (m+1)*6);
+    await sleep(10);
+  }
+
+  // ── Rückseite ────────────────────────────────────────
+  setLoader(true, 'Rückseite wird erstellt…', 96);
+  doc.addPage(fmt==='a3'?'a3':'a4', orientation);
+  await drawBack(doc, pw, ph, year, brandName, brandSocial, impName,
+                 impStreet, impPlz, impCity, impTel, impEmail, accent, ar, ag, ab, SCALE);
+
+  setLoader(true, 'PDF wird gespeichert…', 99);
+  await sleep(100);
+
+  const filename = `${brandName.replace(/\s/g,'_')}_Kalender_${year}_${title.replace(/[^a-zA-Z0-9]/g,'_')}.pdf`;
+  doc.save(filename);
+  setLoader(false);
+  } catch(err) {
+    setLoader(false);
+    alert('FEHLER: ' + err.message + '\n\nStack: ' + err.stack);
+  }
+}
+
+// ── COVER ────────────────────────────────────────────────────────────────────
+async function drawCover(doc, pw, ph, year, title, brand, accent, ar, ag, ab, SC) {
+  const W=Math.round(pw*SC), H=Math.round(ph*SC);
+  const cvs = document.createElement('canvas');
+  cvs.width=W; cvs.height=H;
+  const ctx = cvs.getContext('2d');
+
+  // Hintergrund je Design
+  const TH = theme();
+  ctx.fillStyle = TH.coverBg;
+  ctx.fillRect(0,0,W,H);
+
+  // Tiled dark images from all months
+  const cw=Math.ceil(W/4), ch=Math.ceil(H/3);
+  for(let i=0;i<12;i++) {
+    const img=state.images[i];
+    if(!img) continue;
+    const col=i%4, row=Math.floor(i/4);
+    const tc=document.createElement('canvas');
+    tc.width=cw; tc.height=ch;
+    const tx=tc.getContext('2d');
+    tx.drawImage(img,0,0,cw,ch);
+    tx.fillStyle=TH.coverTile;
+    tx.fillRect(0,0,cw,ch);
+    ctx.drawImage(tc, col*cw, row*ch);
+  }
+
+  // Schleier
+  ctx.fillStyle=TH.coverVeil;
+  ctx.fillRect(0,0,W,H);
+
+  // Accent bars top/bottom
+  ctx.fillStyle=accent;
+  ctx.fillRect(0,0,W,7*SC);
+  ctx.fillRect(0,H-7*SC,W,7*SC);
+
+  // Divider lines
+  ctx.strokeStyle=TH.coverLine;
+  ctx.lineWidth=1.2*SC;
+  ctx.beginPath(); ctx.moveTo(W*0.08,H*0.60); ctx.lineTo(W*0.92,H*0.60); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(W*0.08,H*0.38); ctx.lineTo(W*0.92,H*0.38); ctx.stroke();
+
+  // Title text — Größe automatisch anpassen damit es passt
+  ctx.fillStyle=accent;
+  ctx.textAlign='center';
+  let titleFontSize = 14*SC;
+  ctx.font=`bold ${titleFontSize}px Georgia,serif`;
+  while(ctx.measureText(title.toUpperCase()).width > W*0.80 && titleFontSize > 6*SC) {
+    titleFontSize -= SC;
+    ctx.font=`bold ${titleFontSize}px Georgia,serif`;
+  }
+  ctx.fillText(title.toUpperCase(), W/2, H*0.58);
+
+  // Jahr — passend zur Seitengröße
+  ctx.fillStyle=accent;
+  ctx.font=`bold ${58*SC}px Georgia,serif`;
+  ctx.fillText(String(year), W/2, H*0.50);
+
+  // Brand
+  ctx.fillStyle=TH.coverText;
+  ctx.font=`bold ${12*SC}px Georgia,serif`;
+  ctx.fillText(brand, W/2, H*0.72);
+
+  // 12 month dots
+  for(let i=0;i<12;i++) {
+    const dx=W*0.12+i*(W*0.76/11);
+    ctx.fillStyle=TH.coverDot;
+    ctx.beginPath(); ctx.arc(dx,H*0.36,2.5*SC,0,Math.PI*2); ctx.fill();
+  }
+
+  doc.addImage(cvs.toDataURL('image/jpeg',0.90), 'JPEG', 0, 0, pw, ph);
+}
+
+// ── MONTH PAGE ───────────────────────────────────────────────────────────────
+async function drawMonth(doc, pw, ph, month, year, img, holidays, accent, ar, ag, ab, SC) {
+  const mx=10, mtop=8, mbot=10;
+  const W=Math.round(pw*SC), H=Math.round(ph*SC);
+
+  // Kalender-Daten
   const cal = buildCal(year, month);
   const nw  = cal.length;
-  const MX=10, MTOP=8;
-  const CARD_H_MM = nw >= 6 ? 102 : 116;
-  const CARD_W_MM = PW - 2*MX;
-  const cx = MX*SC, cy = MTOP*SC;
-  const cw = CARD_W_MM*SC, ch = CARD_H_MM*SC;
 
-  // 1. Background
-  ctx.fillStyle = '#000000';
+  // Feste Bildhöhe in mm — bewusst konservativ damit Grid immer passt
+  const cardH = nw >= 6 ? 105 : 118;  // mm, absolut
+  const cardW = pw - 2*mx;
+  const cardX = mx, cardY = mtop;
+
+  const acRgb = hexToRgb(accent);
+  const acStr = `rgb(${acRgb.r},${acRgb.g},${acRgb.b})`;
+
+  // Canvas für die ganze Seite
+  const cvs = document.createElement('canvas');
+  cvs.width = W; cvs.height = H;
+  const ctx = cvs.getContext('2d');
+
+  // 1. Hintergrund (einfarbig + dasselbe Bild blass als Wasserzeichen)
+  const TH = theme();
+  ctx.fillStyle = TH.pageBg;
   ctx.fillRect(0, 0, W, H);
-  ctx.globalAlpha = 0.40;
+  ctx.globalAlpha = TH.wmAlpha;
   ctx.drawImage(img, 0, 0, W, H);
-  ctx.globalAlpha = 1;
-  ctx.fillStyle = 'rgba(0,0,0,0.55)';
+  ctx.globalAlpha = 1.0;
+  ctx.fillStyle = TH.wmVeil;
   ctx.fillRect(0, 0, W, H);
-  const grd = ctx.createLinearGradient(0, H*0.45, 0, H);
-  grd.addColorStop(0, 'rgba(0,0,0,0)');
-  grd.addColorStop(1, 'rgba(0,0,0,0.72)');
-  ctx.fillStyle = grd;
-  ctx.fillRect(0, H*0.45, W, H*0.55);
 
-  // 2. Photo card with destination-in rounding
-  const R = Math.round(SC*5);
-  const tmp = document.createElement('canvas');
-  tmp.width = cw; tmp.height = ch;
-  const tc = tmp.getContext('2d');
-  tc.drawImage(img, 0, 0, cw, ch);
-  tc.globalCompositeOperation = 'destination-in';
-  tc.beginPath();
-  tc.moveTo(R,0); tc.lineTo(cw-R,0);
-  tc.quadraticCurveTo(cw,0,cw,R);
-  tc.lineTo(cw,ch-R);
-  tc.quadraticCurveTo(cw,ch,cw-R,ch);
-  tc.lineTo(R,ch);
-  tc.quadraticCurveTo(0,ch,0,ch-R);
-  tc.lineTo(0,R);
-  tc.quadraticCurveTo(0,0,R,0);
-  tc.closePath();
-  tc.fill();
-  tc.globalCompositeOperation = 'source-over';
-  ctx.drawImage(tmp, cx, cy);
+  // 2. Bildkarte — abgerundetes Rechteck mit dem echten Foto
+  const cX=Math.round(cardX*SC), cY=Math.round(cardY*SC);
+  const cW=Math.round(cardW*SC), cH=Math.round(cardH*SC);
+  const rr=Math.round(SC*5);
 
-  // Outer glow border - makes card visible on both light and dark backgrounds
   ctx.save();
   ctx.beginPath();
-  ctx.moveTo(cx+R,cy); ctx.lineTo(cx+cw-R,cy);
-  ctx.quadraticCurveTo(cx+cw,cy,cx+cw,cy+R);
-  ctx.lineTo(cx+cw,cy+ch-R);
-  ctx.quadraticCurveTo(cx+cw,cy+ch,cx+cw-R,cy+ch);
-  ctx.lineTo(cx+R,cy+ch);
-  ctx.quadraticCurveTo(cx,cy+ch,cx,cy+ch-R);
-  ctx.lineTo(cx,cy+R);
-  ctx.quadraticCurveTo(cx,cy,cx+R,cy);
+  ctx.moveTo(cX+rr,cY); ctx.lineTo(cX+cW-rr,cY);
+  ctx.quadraticCurveTo(cX+cW,cY,cX+cW,cY+rr);
+  ctx.lineTo(cX+cW,cY+cH-rr);
+  ctx.quadraticCurveTo(cX+cW,cY+cH,cX+cW-rr,cY+cH);
+  ctx.lineTo(cX+rr,cY+cH);
+  ctx.quadraticCurveTo(cX,cY+cH,cX,cY+cH-rr);
+  ctx.lineTo(cX,cY+rr);
+  ctx.quadraticCurveTo(cX,cY,cX+rr,cY);
   ctx.closePath();
-  // Outer dark ring
-  ctx.strokeStyle='rgba(0,0,0,0.9)';
-  ctx.lineWidth=10;
-  ctx.stroke();
+  ctx.clip();
+  ctx.drawImage(img, cX, cY, cW, cH);
   ctx.restore();
-  // Inner light border
+
+  // Rahmen
   ctx.save();
   ctx.beginPath();
-  ctx.moveTo(cx+R,cy); ctx.lineTo(cx+cw-R,cy);
-  ctx.quadraticCurveTo(cx+cw,cy,cx+cw,cy+R);
-  ctx.lineTo(cx+cw,cy+ch-R);
-  ctx.quadraticCurveTo(cx+cw,cy+ch,cx+cw-R,cy+ch);
-  ctx.lineTo(cx+R,cy+ch);
-  ctx.quadraticCurveTo(cx,cy+ch,cx,cy+ch-R);
-  ctx.lineTo(cx,cy+R);
-  ctx.quadraticCurveTo(cx,cy,cx+R,cy);
+  ctx.moveTo(cX+rr,cY); ctx.lineTo(cX+cW-rr,cY);
+  ctx.quadraticCurveTo(cX+cW,cY,cX+cW,cY+rr);
+  ctx.lineTo(cX+cW,cY+cH-rr);
+  ctx.quadraticCurveTo(cX+cW,cY+cH,cX+cW-rr,cY+cH);
+  ctx.lineTo(cX+rr,cY+cH);
+  ctx.quadraticCurveTo(cX,cY+cH,cX,cY+cH-rr);
+  ctx.lineTo(cX,cY+rr);
+  ctx.quadraticCurveTo(cX,cY,cX+rr,cY);
   ctx.closePath();
-  ctx.strokeStyle='rgba(180,180,160,0.55)';
-  ctx.lineWidth=2;
+  ctx.strokeStyle=TH.cardEdge;
+  ctx.lineWidth=8;
   ctx.stroke();
   ctx.restore();
 
-  // Accent bar bottom
-  ctx.fillStyle = `rgb(${ac.r},${ac.g},${ac.b})`;
-  ctx.fillRect(0, H - 3*SC, W, 3*SC);
+  // 3. Monatsname
+  const mnYmm = cardY + cardH + 11;
+  const mnYpx = Math.round(mnYmm * SC);
+  const mspaced = MONTHS_DE[month-1].split('').join('  ');
+  ctx.fillStyle = acStr;
+  ctx.font = `bold ${Math.round(21*SC)}px Georgia,serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'alphabetic';
+  ctx.fillText(mspaced, W/2, mnYpx);
 
-  return cv;
-}
+  // 4. Kalender-Grid in Pixel
+  const gridTopPx = Math.round((mnYmm + 7) * SC);
+  const gridBotPx = Math.round((ph - mbot) * SC);
+  const gridHpx   = gridBotPx - gridTopPx;
+  const colWpx    = Math.round((cardW * SC) / 7);
+  const rowHpx    = gridHpx / (nw + 1);
+  const leftPx    = Math.round(mx * SC);
 
-// Draw text (month name + calendar grid) directly with jsPDF for sharp text
-function drawMonthText(doc, month, year, hols, accentHex, CARD_H_MM) {
-  const hex2rgb = h => ({ r:parseInt(h.slice(1,3),16), g:parseInt(h.slice(3,5),16), b:parseInt(h.slice(5,7),16) });
-  const ac = hex2rgb(accentHex);
-  const ar = ac.r, ag = ac.g, ab = ac.b;
-
-  const MX=10, MTOP=8, MBOT=10;
-  const cal = buildCal(year, month);
-  const nw  = cal.length;
-
-  // Month name
-  const mnY = MTOP + CARD_H_MM + 10;
-  const mspaced = MO[month-1].split('').join('  ');
-  doc.setFont('times','bold');
-  doc.setFontSize(22);
-  doc.setTextColor(ar, ag, ab);
-  doc.text(mspaced, PW/2, mnY, {align:'center'});
-
-  // Grid
-  const gridTop = mnY + 7;
-  const gridBot = PH - MBOT;
-  const gridH   = gridBot - gridTop;
-  const colW    = (PW - 2*MX) / 7;
-  const rowH    = gridH / (nw + 1);
-
-  // Day headers
-  DA.forEach((d,i) => {
-    doc.setFont('helvetica','bold');
-    doc.setFontSize(8);
-    if(i===6) doc.setTextColor(ar,ag,ab);
-    else doc.setTextColor(220,220,220);
-    doc.text(d, MX + i*colW + colW/2, gridTop + rowH*0.72, {align:'center'});
+  // Kopfzeile
+  DAYS_DE.forEach((d, i) => {
+    ctx.fillStyle = i===6 ? acStr : TH.textMain;
+    ctx.font = `bold ${Math.round(9*SC)}px Arial,sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.fillText(d, leftPx + Math.round(i*colWpx + colWpx/2), Math.round(gridTopPx + rowHpx*0.72));
   });
 
-  // Header line
-  doc.setDrawColor(255,255,255);
-  doc.setLineWidth(0.3);
-  doc.setGState(doc.GState({opacity:0.25}));
-  doc.line(MX, gridTop+rowH, MX+7*colW, gridTop+rowH);
-  doc.setGState(doc.GState({opacity:1}));
+  // Linie Kopfzeile
+  ctx.strokeStyle=TH.lineHead; ctx.lineWidth=Math.round(0.4*SC);
+  ctx.beginPath(); ctx.moveTo(leftPx, Math.round(gridTopPx+rowHpx)); ctx.lineTo(leftPx+7*colWpx, Math.round(gridTopPx+rowHpx)); ctx.stroke();
 
-  // Weeks
+  // Wochen
   cal.forEach((week, wi) => {
-    const rTop = gridTop + (wi+1)*rowH;
-    const rMid = rTop + rowH*0.65;
+    const rTopPx = Math.round(gridTopPx + (wi+1)*rowHpx);
+    const rMidPx = Math.round(rTopPx + rowHpx*0.68);
 
-    doc.setDrawColor(255,255,255);
-    doc.setLineWidth(0.25);
-    doc.setGState(doc.GState({opacity:0.15}));
-    doc.line(MX, rTop+rowH, MX+7*colW, rTop+rowH);
-    doc.setGState(doc.GState({opacity:1}));
+    ctx.strokeStyle=TH.lineWeek; ctx.lineWidth=Math.round(0.3*SC);
+    ctx.beginPath(); ctx.moveTo(leftPx, Math.round(rTopPx+rowHpx)); ctx.lineTo(leftPx+7*colWpx, Math.round(rTopPx+rowHpx)); ctx.stroke();
 
-    week.forEach((day,di) => {
+    week.forEach((day, di) => {
       if(!day) return;
-      const x  = MX + di*colW + colW/2;
+      const x = leftPx + Math.round(di*colWpx + colWpx/2);
       const hk = `${month}-${day}`;
-      const isH = !!hols[hk];
+      const isH = !!holidays[hk];
       const isS = di===6;
-
-      if(isH||isS) {
-        doc.setFont('helvetica','bold');
-        doc.setFontSize(12);
-        doc.setTextColor(ar,ag,ab);
-      } else {
-        doc.setFont('helvetica','normal');
-        doc.setFontSize(12);
-        doc.setTextColor(240,240,240);
-      }
-      doc.text(String(day), x, rMid, {align:'center'});
-
+      ctx.fillStyle = (isH||isS) ? acStr : TH.textMain;
+      ctx.font = (isH||isS) ? `bold ${Math.round(13*SC)}px Arial,sans-serif` : `${Math.round(13*SC)}px Arial,sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.fillText(String(day), x, rMidPx);
       if(isH) {
-        doc.setFont('helvetica','bold');
-        doc.setFontSize(5.5);
-        doc.setTextColor(ar,ag,ab);
-        doc.text(hols[hk], x, rMid+3.5, {align:'center'});
+        ctx.font = `${Math.round(5*SC)}px Arial,sans-serif`;
+        ctx.fillStyle = acStr;
+        ctx.fillText(holidays[hk], x, rMidPx + Math.round(1.5*SC));
       }
     });
   });
+
+  // Roter Balken
+  ctx.fillStyle = acStr;
+  ctx.fillRect(0, H-Math.round(2.5*SC), W, Math.round(2.5*SC));
+
+  doc.addImage(cvs.toDataURL('image/jpeg',0.92), 'JPEG', 0, 0, pw, ph);
 }
 
-// ═══════════════════════════════════
-// CANVAS: cover page
-// ═══════════════════════════════════
-function drawCoverCanvas(year, titleText, brandName, accentHex) {
-  const cv = document.createElement('canvas');
-  cv.width = W; cv.height = H;
-  const ctx = cv.getContext('2d');
-  const hex2rgb = h => ({ r:parseInt(h.slice(1,3),16), g:parseInt(h.slice(3,5),16), b:parseInt(h.slice(5,7),16) });
-  const ac = hex2rgb(accentHex);
-  const acs = `rgb(${ac.r},${ac.g},${ac.b})`;
+// ── BACK PAGE ────────────────────────────────────────────────────────────────
+async function drawBack(doc, pw, ph, year, brandName, brandSocial,
+  impName, impStreet, impPlz, impCity, impTel, impEmail, accent, ar, ag, ab, SC) {
+  const W=Math.round(pw*SC), H=Math.round(ph*SC);
+  const cvs=document.createElement('canvas');
+  cvs.width=W; cvs.height=H;
+  const ctx=cvs.getContext('2d');
 
-  // Tiled images
-  const cw = Math.ceil(W/4), ch = Math.ceil(H/3);
-  ctx.fillStyle = '#000000';
-  ctx.fillRect(0,0,W,H);
+  // Same bg as cover but darker
+  const cw2=Math.ceil(W/4), ch2=Math.ceil(H/3);
+  const TH = theme();
+  ctx.fillStyle=TH.pageBg; ctx.fillRect(0,0,W,H);
   for(let i=0;i<12;i++) {
-    const img = S.imgs[i]; if(!img) continue;
-    const col=i%4, row=Math.floor(i/4);
-    const tc = document.createElement('canvas'); tc.width=cw; tc.height=ch;
-    const tx = tc.getContext('2d');
-    tx.drawImage(img,0,0,cw,ch);
-    tx.fillStyle='rgba(8,8,4,0.62)'; tx.fillRect(0,0,cw,ch);
-    ctx.drawImage(tc, col*cw, row*ch);
-  }
-  ctx.fillStyle='rgba(30,30,16,0.40)'; ctx.fillRect(0,0,W,H);
-
-  // Top/bottom accent bars
-  ctx.fillStyle=accentHex;
-  ctx.fillRect(0,0,W,8*SC);
-  ctx.fillRect(0,H-8*SC,W,8*SC);
-
-  // Lines
-  ctx.strokeStyle='rgba(255,255,255,0.15)'; ctx.lineWidth=1;
-  ctx.beginPath(); ctx.moveTo(W*0.08,H*0.38); ctx.lineTo(W*0.92,H*0.38); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(W*0.08,H*0.60); ctx.lineTo(W*0.92,H*0.60); ctx.stroke();
-
-  // Year
-  ctx.fillStyle=acs;
-  ctx.font=`bold ${Math.round(60*SC/3)}px Georgia,serif`;
-  ctx.textAlign='center'; ctx.textBaseline='alphabetic';
-  ctx.fillText(String(year), W/2, H*0.50);
-
-  // Title
-  ctx.fillStyle=acs;
-  let fs = Math.round(14*SC/3);
-  ctx.font=`bold ${fs}px Georgia,serif`;
-  while(ctx.measureText(titleText.toUpperCase()).width > W*0.78 && fs>6) { fs--; ctx.font=`bold ${fs}px Georgia,serif`; }
-  ctx.fillText(titleText.toUpperCase(), W/2, H*0.58);
-
-  // Brand
-  ctx.fillStyle='rgba(255,255,255,0.80)';
-  ctx.font=`bold ${Math.round(12*SC/3)}px Georgia,serif`;
-  ctx.fillText(brandName, W/2, H*0.70);
-
-  // Dots
-  for(let i=0;i<12;i++){
-    ctx.fillStyle='rgba(255,255,255,0.28)';
-    ctx.beginPath(); ctx.arc(W*0.12+i*(W*0.76/11), H*0.36, 2.5*SC/3,0,Math.PI*2); ctx.fill();
-  }
-
-  return cv;
-}
-
-// ═══════════════════════════════════
-// CANVAS: back page
-// ═══════════════════════════════════
-function drawBackCanvas(brandSocial, impName, impStr, impPlz, impCity, impTel, impMail, accentHex) {
-  const cv = document.createElement('canvas');
-  cv.width = W; cv.height = H;
-  const ctx = cv.getContext('2d');
-  const hex2rgb = h => ({ r:parseInt(h.slice(1,3),16), g:parseInt(h.slice(3,5),16), b:parseInt(h.slice(5,7),16) });
-  const ac = hex2rgb(accentHex);
-  const acs = `rgb(${ac.r},${ac.g},${ac.b})`;
-
-  const cw=Math.ceil(W/4), ch=Math.ceil(H/3);
-  ctx.fillStyle='#0e0e08'; ctx.fillRect(0,0,W,H);
-  for(let i=0;i<12;i++){
-    const img=S.imgs[i]; if(!img) continue;
+    const img=state.images[i]; if(!img) continue;
     const col=i%4,row=Math.floor(i/4);
-    const tc=document.createElement('canvas'); tc.width=cw; tc.height=ch;
+    const tc=document.createElement('canvas');
+    tc.width=cw2;tc.height=ch2;
     const tx=tc.getContext('2d');
-    tx.drawImage(img,0,0,cw,ch);
-    tx.fillStyle='rgba(5,5,3,0.55)'; tx.fillRect(0,0,cw,ch);
-    ctx.drawImage(tc,col*cw,row*ch);
+    tx.drawImage(img,0,0,cw2,ch2);
+    tx.fillStyle=TH.backTile; tx.fillRect(0,0,cw2,ch2);
+    ctx.drawImage(tc,col*cw2,row*ch2);
   }
-  ctx.fillStyle='rgba(10,10,5,0.20)'; ctx.fillRect(0,0,W,H);
-  ctx.fillStyle=accentHex;
-  ctx.fillRect(0,0,W,8*SC); ctx.fillRect(0,H-8*SC,W,8*SC);
+  ctx.fillStyle=TH.backVeil; ctx.fillRect(0,0,W,H);
+  ctx.fillStyle=accent;
+  ctx.fillRect(0,0,W,7*SC); ctx.fillRect(0,H-7*SC,W,7*SC);
 
-  // Box - groesser und besser positioniert
-  const bx=W*0.12, by=H*0.18, bw=W*0.76, bh=H*0.62;
-  ctx.fillStyle='rgba(12,12,8,0.88)';
-  ctx.beginPath(); ctx.roundRect(bx,by,bw,bh,18); ctx.fill();
+  doc.addImage(cvs.toDataURL('image/jpeg',0.88),'JPEG',0,0,pw,ph);
 
-  const cx2=W/2;
-  const lh = Math.round(SC*5.5); // fester Zeilenabstand in px
-  ctx.textAlign='center'; ctx.textBaseline='alphabetic';
+  // Impressum box
+  const bw=pw*0.72, bh=ph*0.50;
+  const bx=(pw-bw)/2, by=(ph-bh)/2;
+  doc.setFillColor(TH.boxFill[0],TH.boxFill[1],TH.boxFill[2]);
+  doc.setGState(doc.GState({opacity:0.78}));
+  doc.roundedRect(bx, by, bw, bh, 6, 6, 'F');
+  doc.setGState(doc.GState({opacity:1}));
 
-  // Social Media
-  ctx.fillStyle=acs; ctx.font=`bold ${Math.round(SC*5)}px Georgia,serif`;
-  ctx.fillText('S o c i a l  M e d i a :', cx2, by+lh*1.8);
-  ctx.fillStyle='rgba(255,255,255,0.85)'; ctx.font=`${Math.round(SC*4)}px Georgia,serif`;
-  ctx.fillText(brandSocial, cx2, by+lh*3.0);
+  const cx=pw/2;
 
-  // Trennlinie
-  ctx.strokeStyle='rgba(255,255,255,0.15)'; ctx.lineWidth=1;
-  ctx.beginPath(); ctx.moveTo(bx+bw*0.1, by+lh*3.9); ctx.lineTo(bx+bw*0.9, by+lh*3.9); ctx.stroke();
+  doc.setFont('times','bold'); doc.setFontSize(14);
+  doc.setTextColor(ar*255,ag*255,ab*255);
+  doc.text('S o c i a l  M e d i a :', cx, by+14, {align:'center'});
 
-  // Impressum
-  ctx.fillStyle=acs; ctx.font=`bold ${Math.round(SC*4.5)}px Georgia,serif`;
-  ctx.fillText('I m p r e s s u m :', cx2, by+lh*5.0);
-  ctx.fillStyle='rgba(255,255,255,0.85)'; ctx.font=`${Math.round(SC*3.8)}px Georgia,serif`;
-  [impName, impStr, `${impPlz} ${impCity}`, impMail, impTel].forEach((l,i)=>{
-    ctx.fillText(l, cx2, by+lh*6.3+i*lh*1.3);
-  });
+  doc.setFont('times','normal'); doc.setFontSize(13);
+  doc.setTextColor(TH.boxText[0],TH.boxText[1],TH.boxText[2]);
+  doc.text(brandSocial, cx, by+24, {align:'center'});
 
-  return cv;
+  doc.setFont('times','bold'); doc.setFontSize(13);
+  doc.setTextColor(ar*255,ag*255,ab*255);
+  doc.text('I m p r e s s u m :', cx, by+40, {align:'center'});
+
+  doc.setFont('times','normal'); doc.setFontSize(12);
+  doc.setTextColor(TH.boxText[0],TH.boxText[1],TH.boxText[2]);
+  const lines=[impName, impStreet, `${impPlz} ${impCity}`, impEmail, impTel];
+  lines.forEach((l,i) => doc.text(l, cx, by+52+i*10, {align:'center'}));
 }
 
-// ═══════════════════════════════════
-// SUMMARY
-// ═══════════════════════════════════
-function fillSum() {
-  document.getElementById('stitle').textContent = document.getElementById('title').value || '–';
-  document.getElementById('syear').textContent  = document.getElementById('year').value;
-  document.getElementById('simgs').textContent  = S.imgs.filter(Boolean).length + ' / 12 Bilder';
-  document.getElementById('sland').textContent  = document.getElementById('land').selectedOptions[0].text;
-  document.getElementById('sbrand').textContent = document.getElementById('brand').value || '–';
-}
-
-// ═══════════════════════════════════
-// GENERATE PDF
-// ═══════════════════════════════════
-async function makePDF() {
-  if(!S.imgs.every(Boolean)){alert('Bitte alle 12 Bilder hochladen!');return}
-  const {jsPDF} = window.jspdf;
-  const doc = new jsPDF({orientation:'portrait', unit:'mm', format:'a4'});
-
-  const year   = parseInt(document.getElementById('year').value);
-  const title  = document.getElementById('title').value || 'Kalender';
-  const land   = document.getElementById('land').value;
-  const accent = S.color;
-  const brand  = document.getElementById('brand').value;
-  const social = document.getElementById('social').value;
-  const iname  = document.getElementById('iname').value;
-  const istr   = document.getElementById('istr').value;
-  const iplz   = document.getElementById('iplz').value;
-  const icity  = document.getElementById('icity').value;
-  const itel   = document.getElementById('itel').value;
-  const imail  = document.getElementById('imail').value;
-  const hols   = getHols(year, land);
-
-  loader(true,'Deckblatt…',0);
-  await sleep(30);
-
-  // Cover
-  const covCv = drawCoverCanvas(year, title, brand, accent);
-  doc.addImage(covCv.toDataURL('image/jpeg',0.92),'JPEG',0,0,PW,PH);
-
-  // 12 months
-  for(let m=0; m<12; m++) {
-    loader(true, `${MO[m]}…`, 5 + m*7);
-    await sleep(10);
-    doc.addPage('a4','portrait');
-    const nwM = buildCal(year, m+1).length;
-    const cardHmm = nwM >= 6 ? 102 : 116;
-    const cv = drawMonthCanvas(m+1, year, S.imgs[m], hols, accent);
-    doc.addImage(cv.toDataURL('image/jpeg',0.93),'JPEG',0,0,PW,PH);
-    drawMonthText(doc, m+1, year, hols, accent, cardHmm);
+// ── Calendar helper ───────────────────────────────────────────────────────────
+function buildCal(year, month) {
+  const first = new Date(year, month-1, 1);
+  const last  = new Date(year, month, 0).getDate();
+  let dow = first.getDay(); // 0=Sun
+  dow = dow===0 ? 6 : dow-1; // Mon=0
+  const weeks=[]; let week=new Array(7).fill(null);
+  let d=1;
+  for(let i=dow;i<7&&d<=last;i++,d++) week[i]=d;
+  weeks.push(week);
+  while(d<=last) {
+    week=new Array(7).fill(null);
+    for(let i=0;i<7&&d<=last;i++,d++) week[i]=d;
+    weeks.push(week);
   }
-
-  // Back
-  loader(true,'Rückseite…',95);
-  await sleep(10);
-  doc.addPage('a4','portrait');
-  const bkCv = drawBackCanvas(social,iname,istr,iplz,icity,itel,imail,accent);
-  doc.addImage(bkCv.toDataURL('image/jpeg',0.92),'JPEG',0,0,PW,PH);
-
-  loader(true,'Speichern…',99);
-  await sleep(80);
-
-  const fn = `${(brand||'Kalender').replace(/\s/g,'_')}_${year}_${title.replace(/[^a-zA-Z0-9]/g,'_')}.pdf`;
-  doc.save(fn);
-  loader(false);
+  return weeks;
 }
 
-// ═══════════════════════════════════
-// HELPERS
-// ═══════════════════════════════════
-function sleep(ms){return new Promise(r=>setTimeout(r,ms))}
-function loader(on,msg,pct){
-  document.getElementById('loader').classList.toggle('on',on);
-  if(msg) document.getElementById('lmsg').textContent=msg;
-  if(pct!==undefined) document.getElementById('lbar').style.width=pct+'%';
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
+
+function setLoader(show, msg, pct) {
+  document.getElementById('loader').classList.toggle('show', show);
+  if(msg) document.getElementById('loader-msg').textContent=msg;
+  if(pct!==undefined) document.getElementById('loader-bar').style.width=pct+'%';
 }
+
 </script>
 </body>
 </html>
