@@ -541,16 +541,16 @@
       <!-- Thema -->
       <label>Thema / Motiv</label>
       <div class="chip-group" id="chips-thema">
-        <div class="chip active" data-group="thema" data-val="different owl species, each in a unique natural setting" onclick="selChip(this)">🦉 Eulen & UHUs</div>
-        <div class="chip" data-group="thema" data-val="stunning mountain landscapes across all four seasons" onclick="selChip(this)">🏔️ Berge</div>
-        <div class="chip" data-group="thema" data-val="wild animals of central Europe in their natural habitat" onclick="selChip(this)">🦊 Wildtiere</div>
-        <div class="chip" data-group="thema" data-val="beautiful wildflowers and botanical illustrations" onclick="selChip(this)">🌸 Blumen</div>
-        <div class="chip" data-group="thema" data-val="tranquil forest landscapes through the seasons" onclick="selChip(this)">🌲 Wälder</div>
-        <div class="chip" data-group="thema" data-val="European birds of prey in dramatic poses" onclick="selChip(this)">🦅 Greifvögel</div>
-        <div class="chip" data-group="thema" data-val="serene lake and river landscapes" onclick="selChip(this)">🏞️ Seen</div>
-        <div class="chip" data-group="thema" data-val="macro photography of insects and small creatures" onclick="selChip(this)">🦋 Insekten</div>
-        <div class="chip" data-group="thema" data-val="vintage botanical prints of herbs and plants" onclick="selChip(this)">🌿 Kräuter</div>
-        <div class="chip" data-group="thema" data-val="ancient castles and ruins in European landscapes" onclick="selChip(this)">🏰 Burgen</div>
+        <div class="chip active" data-group="thema" data-val="a single owl" onclick="selChip(this)">🦉 Eulen & UHUs</div>
+        <div class="chip" data-group="thema" data-val="a single mountain landscape" onclick="selChip(this)">🏔️ Berge</div>
+        <div class="chip" data-group="thema" data-val="a single wild animal of central Europe in its natural habitat" onclick="selChip(this)">🦊 Wildtiere</div>
+        <div class="chip" data-group="thema" data-val="a single wildflower" onclick="selChip(this)">🌸 Blumen</div>
+        <div class="chip" data-group="thema" data-val="a single tranquil forest scene" onclick="selChip(this)">🌲 Wälder</div>
+        <div class="chip" data-group="thema" data-val="a single European bird of prey" onclick="selChip(this)">🦅 Greifvögel</div>
+        <div class="chip" data-group="thema" data-val="a single serene lake or river landscape" onclick="selChip(this)">🏞️ Seen</div>
+        <div class="chip" data-group="thema" data-val="a single insect in macro view" onclick="selChip(this)">🦋 Insekten</div>
+        <div class="chip" data-group="thema" data-val="a single herb or plant, botanical study" onclick="selChip(this)">🌿 Kräuter</div>
+        <div class="chip" data-group="thema" data-val="a single ancient castle or ruin in a European landscape" onclick="selChip(this)">🏰 Burgen</div>
       </div>
 
       <div class="sep"></div>
@@ -609,9 +609,9 @@
       <div class="sep"></div>
 
       <!-- Generated Prompt -->
-      <label>Generierter Prompt</label>
+      <label>Deine 12 Prompts – einen pro Monat</label>
       <div style="position:relative">
-        <textarea id="prompt-output" rows="5" readonly
+        <textarea id="prompt-output" rows="16" readonly
           style="background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.20);border-radius:10px;
                  color:#fff;padding:16px;font-size:13px;line-height:1.7;width:100%;resize:none;
                  font-family:'Source Sans 3',sans-serif"></textarea>
@@ -619,20 +619,21 @@
           style="position:absolute;top:10px;right:10px;background:var(--red);border:none;
                  color:white;padding:6px 14px;border-radius:6px;cursor:pointer;
                  font-size:12px;font-weight:600;font-family:'Source Sans 3',sans-serif;transition:all 0.2s">
-          📋 Kopieren
+          📋 Alle kopieren
         </button>
       </div>
 
       <div class="info-box" style="margin-top:12px">
         <strong>So geht's:</strong> Prompt kopieren → ChatGPT öffnen → Prompt einfügen → Bild generieren lassen → Als JPG/PNG speichern → Hier hochladen 🚀
         <br><br>
-        <strong>Wichtig:</strong> Du brauchst <strong>12 einzelne Bilder</strong>, eines pro Monat.
-        Nutze den Prompt also zwölfmal und ändere jedes Mal das Motiv oder die Jahreszeit.
-        Ein einzelnes Bild mit zwölf Motiven darin wird beim Druck unscharf.
+        <strong>So bekommst du 12 verschiedene Bilder:</strong> Oben stehen zwölf fertige Prompts,
+        einer pro Monat – jeder mit passender Jahreszeit und einem anderen Bildausschnitt.
+        Kopiere immer nur <strong>einen Block</strong> (ohne die Zeile mit dem Monatsnamen) und lass ihn einzeln erzeugen.
+        Gefällt dir die Auswahl der Bildausschnitte nicht, klick unten auf "Andere Bildausschnitte würfeln".
       </div>
 
       <div class="btn-row">
-        <button class="btn btn-outline" onclick="buildPrompt()">🔄 Prompt neu generieren</button>
+        <button class="btn btn-outline" onclick="shuffleViews()">🔄 Andere Bildausschnitte würfeln</button>
         <button class="btn btn-primary" onclick="goStep(1)">Weiter → Einstellungen</button>
       </div>
     </div>
@@ -946,7 +947,7 @@ function goStep(n) {
 // PROMPT GENERATOR
 // ═══════════════════════════════════════════════════════
 const promptData = {
-  thema:  'different owl species, each in a unique natural setting',
+  thema:  'a single owl',
   stil:   'photorealistic, professional wildlife photography',
   mood:   'dramatic natural lighting, moody atmosphere',
   farbe:  'natural true-to-life colors',
@@ -975,17 +976,57 @@ function toggleExtra(el) {
   buildPrompt();
 }
 
+// Jahreszeit je Monat – sorgt dafür, dass die 12 Bilder unterschiedlich werden
+const MONTH_SEASON = [
+  'deep winter, fresh snow, cold clear light',
+  'late winter, frost and thin ice, pale sun',
+  'early spring, first buds, damp ground',
+  'spring, fresh green, soft rain showers',
+  'late spring, full bloom, bright fresh colours',
+  'early summer, lush green, long daylight',
+  'high summer, strong sunlight, deep blue sky',
+  'late summer, warm haze, dry grasses',
+  'early autumn, first colours turning',
+  'autumn, golden foliage, low warm sun',
+  'late autumn, mist, bare branches',
+  'winter, snow cover, low sun and long shadows'
+];
+
+// Perspektiven – werden beim Klick auf "Prompt neu generieren" neu gemischt
+const VIEWS = [
+  'wide establishing view', 'close-up view', 'view from slightly above',
+  'low camera angle near the ground', 'side view', 'view into the distance',
+  'view framed by trees', 'centred symmetrical composition',
+  'off-centre composition with open space', 'view along a path or waterline',
+  'view against the light', 'calm view from a raised spot'
+];
+let viewOrder = [...Array(12).keys()];
+
+function shuffleViews() {
+  for(let i = viewOrder.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [viewOrder[i], viewOrder[j]] = [viewOrder[j], viewOrder[i]];
+  }
+  buildPrompt();
+}
+
 function buildPrompt() {
   const extraParts = Object.values(extras).filter(e=>e.active).map(e=>e.text);
   const extraStr = extraParts.length ? ', ' + extraParts.join(', ') : '';
-  const prompt =
-    `Create ONE single landscape-format image of ${promptData.thema}. ` +
-    `Style: ${promptData.stil}. ` +
-    `Mood and lighting: ${promptData.mood}. ` +
-    `Color palette: ${promptData.farbe}${extraStr}. ` +
-    `Aspect ratio 3:2, landscape orientation, highest available resolution (at least 1536 pixels wide). ` +
-    `One complete scene only – no grid, no collage, no split panels, no text, no borders.`;
-  document.getElementById('prompt-output').value = prompt;
+
+  const blocks = MONTHS_DE.map((mName, i) => {
+    return `─── ${mName} ───\n` +
+      `Create ONE single image of ${promptData.thema}. ` +
+      `Season: ${MONTH_SEASON[i]}. ` +
+      `Composition: ${VIEWS[viewOrder[i]]}. ` +
+      `Style: ${promptData.stil}. ` +
+      `Mood and lighting: ${promptData.mood}. ` +
+      `Color palette: ${promptData.farbe}${extraStr}. ` +
+      `Aspect ratio 3:2, landscape orientation, highest available resolution (at least 1536 pixels wide). ` +
+      `Exactly one subject in one complete scene – no grid, no collage, no split panels, no multiple variants, no text, no borders.`;
+  });
+
+  document.getElementById('prompt-output').value = blocks.join('\n\n');
 }
 
 function copyPrompt() {
