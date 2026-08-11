@@ -610,26 +610,15 @@
 
       <!-- Generated Prompt -->
       <label>Deine 12 Prompts – einen pro Monat</label>
-      <div style="position:relative">
-        <textarea id="prompt-output" rows="16" readonly
-          style="background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.20);border-radius:10px;
-                 color:#fff;padding:16px;font-size:13px;line-height:1.7;width:100%;resize:none;
-                 font-family:'Source Sans 3',sans-serif"></textarea>
-        <button onclick="copyPrompt()" id="copy-btn"
-          style="position:absolute;top:10px;right:10px;background:var(--red);border:none;
-                 color:white;padding:6px 14px;border-radius:6px;cursor:pointer;
-                 font-size:12px;font-weight:600;font-family:'Source Sans 3',sans-serif;transition:all 0.2s">
-          📋 Alle kopieren
-        </button>
-      </div>
+      <div id="prompt-list"></div>
 
       <div class="info-box" style="margin-top:12px">
-        <strong>So geht's:</strong> Prompt kopieren → ChatGPT öffnen → Prompt einfügen → Bild generieren lassen → Als JPG/PNG speichern → Hier hochladen 🚀
+        <strong>So geht's:</strong> Bei einem Monat auf "Kopieren" klicken → ChatGPT öffnen →
+        einfügen → Bild erzeugen lassen → als JPG/PNG speichern → in Schritt 2 bei diesem Monat hochladen 🚀
         <br><br>
-        <strong>So bekommst du 12 verschiedene Bilder:</strong> Oben stehen zwölf fertige Prompts,
-        einer pro Monat – jeder mit passender Jahreszeit und einem anderen Bildausschnitt.
-        Kopiere immer nur <strong>einen Block</strong> (ohne die Zeile mit dem Monatsnamen) und lass ihn einzeln erzeugen.
-        Gefällt dir die Auswahl der Bildausschnitte nicht, klick unten auf "Andere Bildausschnitte würfeln".
+        Jeder Monat hat seine eigene Jahreszeit und einen anderen Bildausschnitt –
+        so werden die zwölf Bilder wirklich verschieden.
+        Gefällt dir die Auswahl nicht, klick unten auf "Andere Bildausschnitte würfeln".
       </div>
 
       <div class="btn-row">
@@ -1010,12 +999,13 @@ function shuffleViews() {
   buildPrompt();
 }
 
+let promptTexts = [];
+
 function buildPrompt() {
   const extraParts = Object.values(extras).filter(e=>e.active).map(e=>e.text);
   const extraStr = extraParts.length ? ', ' + extraParts.join(', ') : '';
 
-  const blocks = MONTHS_DE.map((mName, i) => {
-    return `─── ${mName} ───\n` +
+  promptTexts = MONTHS_DE.map((mName, i) =>
       `Create ONE single image of ${promptData.thema}. ` +
       `Season: ${MONTH_SEASON[i]}. ` +
       `Composition: ${VIEWS[viewOrder[i]]}. ` +
@@ -1023,21 +1013,51 @@ function buildPrompt() {
       `Mood and lighting: ${promptData.mood}. ` +
       `Color palette: ${promptData.farbe}${extraStr}. ` +
       `Aspect ratio 3:2, landscape orientation, highest available resolution (at least 1536 pixels wide). ` +
-      `Exactly one subject in one complete scene – no grid, no collage, no split panels, no multiple variants, no text, no borders.`;
-  });
+      `Exactly one subject in one complete scene – no grid, no collage, no split panels, no multiple variants, no text, no borders.`
+  );
 
-  document.getElementById('prompt-output').value = blocks.join('\n\n');
+  const list = document.getElementById('prompt-list');
+  list.innerHTML = '';
+  MONTHS_DE.forEach((mName, i) => {
+    const row = document.createElement('div');
+    row.style.cssText = 'background:rgba(0,0,0,0.35);border:1px solid rgba(255,255,255,0.18);' +
+                        'border-radius:10px;padding:14px 16px;margin-bottom:10px';
+    const head = document.createElement('div');
+    head.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:12px';
+    const name = document.createElement('strong');
+    name.textContent = mName;
+    name.style.cssText = 'font-size:15px;color:#fff';
+    const btn = document.createElement('button');
+    btn.textContent = '📋 Kopieren';
+    btn.style.cssText = 'background:' + state.accentColor + ';border:none;color:white;padding:6px 14px;' +
+                        'border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;' +
+                        "font-family:'Source Sans 3',sans-serif;flex-shrink:0";
+    btn.onclick = () => copyOne(i, btn);
+    head.appendChild(name); head.appendChild(btn);
+    const txt = document.createElement('div');
+    txt.textContent = promptTexts[i];
+    txt.style.cssText = 'margin-top:8px;font-size:12px;line-height:1.6;color:rgba(255,255,255,0.62)';
+    row.appendChild(head); row.appendChild(txt);
+    list.appendChild(row);
+  });
 }
 
-function copyPrompt() {
-  const ta = document.getElementById('prompt-output');
+function copyOne(i, btn) {
+  const ta = document.createElement('textarea');
+  ta.value = promptTexts[i];
+  ta.style.position = 'fixed';
+  ta.style.opacity = '0';
+  document.body.appendChild(ta);
   ta.select();
-  document.execCommand('copy');
-  const btn = document.getElementById('copy-btn');
+  try { document.execCommand('copy'); } catch(e) {}
+  document.body.removeChild(ta);
+  const old = btn.textContent;
+  const oldBg = btn.style.background;
   btn.textContent = '✅ Kopiert!';
   btn.style.background = '#2e7d32';
-  setTimeout(() => { btn.textContent = '📋 Kopieren'; btn.style.background = 'var(--red)'; }, 2000);
+  setTimeout(() => { btn.textContent = old; btn.style.background = oldBg; }, 1800);
 }
+
 
 // Build initial prompt on load
 buildPrompt();
@@ -1049,6 +1069,7 @@ function selColor(el) {
   document.querySelectorAll('.color-opt').forEach(e => e.classList.remove('selected'));
   el.classList.add('selected');
   state.accentColor = el.dataset.col;
+  buildPrompt();
 }
 
 
