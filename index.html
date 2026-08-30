@@ -541,16 +541,16 @@
       <!-- Thema -->
       <label>Thema / Motiv</label>
       <div class="chip-group" id="chips-thema">
-        <div class="chip active" data-group="thema" data-val="a single owl" onclick="selChip(this)">🦉 Eulen & UHUs</div>
-        <div class="chip" data-group="thema" data-val="a single mountain landscape" onclick="selChip(this)">🏔️ Berge</div>
-        <div class="chip" data-group="thema" data-val="a single wild animal of central Europe in its natural habitat" onclick="selChip(this)">🦊 Wildtiere</div>
-        <div class="chip" data-group="thema" data-val="a single wildflower" onclick="selChip(this)">🌸 Blumen</div>
-        <div class="chip" data-group="thema" data-val="a single tranquil forest scene" onclick="selChip(this)">🌲 Wälder</div>
-        <div class="chip" data-group="thema" data-val="a single European bird of prey" onclick="selChip(this)">🦅 Greifvögel</div>
-        <div class="chip" data-group="thema" data-val="a single serene lake or river landscape" onclick="selChip(this)">🏞️ Seen</div>
-        <div class="chip" data-group="thema" data-val="a single insect in macro view" onclick="selChip(this)">🦋 Insekten</div>
-        <div class="chip" data-group="thema" data-val="a single herb or plant, botanical study" onclick="selChip(this)">🌿 Kräuter</div>
-        <div class="chip" data-group="thema" data-val="a single ancient castle or ruin in a European landscape" onclick="selChip(this)">🏰 Burgen</div>
+        <div class="chip active" data-group="thema" data-val="a single owl" data-motiv="1" onclick="selChip(this)">🦉 Eulen & UHUs</div>
+        <div class="chip" data-group="thema" data-val="a single mountain landscape" data-motiv="0" onclick="selChip(this)">🏔️ Berge</div>
+        <div class="chip" data-group="thema" data-val="a single wild animal of central Europe in its natural habitat" data-motiv="1" onclick="selChip(this)">🦊 Wildtiere</div>
+        <div class="chip" data-group="thema" data-val="a single wildflower" data-motiv="1" onclick="selChip(this)">🌸 Blumen</div>
+        <div class="chip" data-group="thema" data-val="a single tranquil forest scene" data-motiv="0" onclick="selChip(this)">🌲 Wälder</div>
+        <div class="chip" data-group="thema" data-val="a single European bird of prey" data-motiv="1" onclick="selChip(this)">🦅 Greifvögel</div>
+        <div class="chip" data-group="thema" data-val="a single serene lake or river landscape" data-motiv="0" onclick="selChip(this)">🏞️ Seen</div>
+        <div class="chip" data-group="thema" data-val="a single insect in macro view" data-motiv="1" onclick="selChip(this)">🦋 Insekten</div>
+        <div class="chip" data-group="thema" data-val="a single herb or plant, botanical study" data-motiv="1" onclick="selChip(this)">🌿 Kräuter</div>
+        <div class="chip" data-group="thema" data-val="a single ancient castle or ruin in a European landscape" data-motiv="0" onclick="selChip(this)">🏰 Burgen</div>
       </div>
 
       <div class="sep"></div>
@@ -860,6 +860,22 @@ let state = {
   design: 'hell',
 };
 
+// Zeichnet ein Bild formatfüllend, ohne es zu verzerren.
+// Überstehende Ränder werden mittig abgeschnitten (wie "Bild füllt Rahmen").
+function drawCover(ctx, img, dx, dy, dw, dh) {
+  const ir = img.width / img.height;
+  const dr = dw / dh;
+  let sx = 0, sy = 0, sw = img.width, sh = img.height;
+  if(ir > dr) {                 // Bild ist breiter als der Rahmen -> links/rechts beschneiden
+    sw = img.height * dr;
+    sx = (img.width - sw) / 2;
+  } else {                      // Bild ist höher als der Rahmen -> oben/unten beschneiden
+    sh = img.width / dr;
+    sy = (img.height - sh) / 2;
+  }
+  ctx.drawImage(img, sx, sy, sw, sh, dx, dy, dw, dh);
+}
+
 // Farbwerte je Design-Variante (hell = druckoptimiert, dunkel = Original)
 function theme() {
   if(state.design === 'dunkel') {
@@ -940,6 +956,7 @@ const promptData = {
   stil:   'photorealistic, professional wildlife photography',
   mood:   'dramatic natural lighting, moody atmosphere',
   farbe:  'natural true-to-life colors',
+  motiv:  true,   // true = Tier/Pflanze im Mittelpunkt, false = Landschaft
 };
 const extras = {
   consistent: { active: false, text: 'consistent style and color palette across all cells' },
@@ -955,6 +972,7 @@ function selChip(el) {
   document.querySelectorAll(`.chip[data-group="${group}"]`).forEach(c => c.classList.remove('active'));
   el.classList.add('active');
   promptData[group] = el.dataset.val;
+  if(group === 'thema') promptData.motiv = el.dataset.motiv === '1';
   buildPrompt();
 }
 
@@ -982,13 +1000,28 @@ const MONTH_SEASON = [
 ];
 
 // Perspektiven – werden beim Klick auf "Prompt neu generieren" neu gemischt
-const VIEWS = [
-  'wide establishing view', 'close-up view', 'view from slightly above',
+// Ansichten für Landschaften – da darf die Weite wirken
+const VIEWS_LAND = [
+  'wide establishing view', 'view from slightly above',
   'low camera angle near the ground', 'side view', 'view into the distance',
   'view framed by trees', 'centred symmetrical composition',
   'off-centre composition with open space', 'view along a path or waterline',
-  'view against the light', 'calm view from a raised spot'
+  'view against the light', 'calm view from a raised spot', 'panoramic wide view'
 ];
+
+// Ansichten für Tiere und Pflanzen – das Motiv bleibt immer groß im Bild
+const VIEWS_MOTIV = [
+  'full body portrait, close to the camera', 'head and shoulders close-up',
+  'three-quarter view from the front', 'side profile, filling the frame',
+  'slightly low angle, looking up at the subject', 'front view, direct eye contact',
+  'subject perched, seen from eye level', 'subject slightly off-centre, close up',
+  'tight close-up of the head', 'subject with wings or leaves spread wide',
+  'subject against a soft blurred background', 'subject seen from slightly above, close'
+];
+
+function currentViews() {
+  return promptData.motiv ? VIEWS_MOTIV : VIEWS_LAND;
+}
 let viewOrder = [...Array(12).keys()];
 
 function shuffleViews() {
@@ -1005,14 +1038,23 @@ function buildPrompt() {
   const extraParts = Object.values(extras).filter(e=>e.active).map(e=>e.text);
   const extraStr = extraParts.length ? ', ' + extraParts.join(', ') : '';
 
+  // Bei Tieren und Pflanzen muss das Motiv den Bildausschnitt dominieren,
+  // sonst wirkt es auf dem Kalenderblatt verloren.
+  const scaleLine = promptData.motiv
+    ? 'The subject must be large and dominant, filling at least 60 percent of the frame height, ' +
+      'clearly in focus, close to the camera. Background softly blurred and secondary. ' +
+      'Do NOT show the subject as a small figure in a wide landscape. '
+    : 'A wide open scene with depth and distance, no single dominant object in the foreground. ';
+
   promptTexts = MONTHS_DE.map((mName, i) =>
       `Create ONE single image of ${promptData.thema}. ` +
       `Season: ${MONTH_SEASON[i]}. ` +
-      `Composition: ${VIEWS[viewOrder[i]]}. ` +
+      `Composition: ${currentViews()[viewOrder[i]]}. ` +
+      scaleLine +
       `Style: ${promptData.stil}. ` +
       `Mood and lighting: ${promptData.mood}. ` +
       `Color palette: ${promptData.farbe}${extraStr}. ` +
-      `Aspect ratio 3:2, landscape orientation, highest available resolution (at least 1536 pixels wide). ` +
+      `Aspect ratio 16:9, landscape orientation, highest available resolution (at least 1536 pixels wide). ` +
       `Exactly one subject in one complete scene – no grid, no collage, no split panels, no multiple variants, no text, no borders.`
   );
 
@@ -1395,7 +1437,7 @@ async function drawCover(doc, pw, ph, year, title, brand, accent, ar, ag, ab, SC
     const tc=document.createElement('canvas');
     tc.width=cw; tc.height=ch;
     const tx=tc.getContext('2d');
-    tx.drawImage(img,0,0,cw,ch);
+    drawCover(tx,img,0,0,cw,ch);
     tx.fillStyle=TH.coverTile;
     tx.fillRect(0,0,cw,ch);
     ctx.drawImage(tc, col*cw, row*ch);
@@ -1457,7 +1499,7 @@ async function drawMonth(doc, pw, ph, month, year, img, holidays, accent, ar, ag
   const nw  = cal.length;
 
   // Feste Bildhöhe in mm — bewusst konservativ damit Grid immer passt
-  const cardH = nw >= 6 ? 105 : 118;  // mm, absolut
+  const cardH = 107;  // mm — entspricht 16:9 bei 190 mm Breite, für alle Monate gleich
   const cardW = pw - 2*mx;
   const cardX = mx, cardY = mtop;
 
@@ -1474,7 +1516,7 @@ async function drawMonth(doc, pw, ph, month, year, img, holidays, accent, ar, ag
   ctx.fillStyle = TH.pageBg;
   ctx.fillRect(0, 0, W, H);
   ctx.globalAlpha = TH.wmAlpha;
-  ctx.drawImage(img, 0, 0, W, H);
+  drawCover(ctx, img, 0, 0, W, H);
   ctx.globalAlpha = 1.0;
   ctx.fillStyle = TH.wmVeil;
   ctx.fillRect(0, 0, W, H);
@@ -1496,7 +1538,7 @@ async function drawMonth(doc, pw, ph, month, year, img, holidays, accent, ar, ag
   ctx.quadraticCurveTo(cX,cY,cX+rr,cY);
   ctx.closePath();
   ctx.clip();
-  ctx.drawImage(img, cX, cY, cW, cH);
+  drawCover(ctx, img, cX, cY, cW, cH);
   ctx.restore();
 
   // Rahmen
@@ -1516,18 +1558,24 @@ async function drawMonth(doc, pw, ph, month, year, img, holidays, accent, ar, ag
   ctx.stroke();
   ctx.restore();
 
-  // 3. Monatsname
-  const mnYmm = cardY + cardH + 11;
-  const mnYpx = Math.round(mnYmm * SC);
-  const mspaced = MONTHS_DE[month-1].split('').join('  ');
-  ctx.fillStyle = acStr;
-  ctx.font = `bold ${Math.round(21*SC)}px Georgia,serif`;
+  // 3. Monatsname – Größe wird automatisch angepasst, damit er nie ins Bild ragt
+  const mspaced = MONTHS_DE[month-1].split('').join(' ');
+  const maxTitleW = (cardW - 10) * SC;          // Breite darf die Bildkarte nicht überschreiten
+  let titleMm = 15;                              // Grundgröße in mm (vorher 21)
   ctx.textAlign = 'center';
   ctx.textBaseline = 'alphabetic';
-  ctx.fillText(mspaced, W/2, mnYpx);
+  ctx.font = `bold ${Math.round(titleMm*SC)}px Georgia,serif`;
+  while(ctx.measureText(mspaced).width > maxTitleW && titleMm > 7) {
+    titleMm -= 0.5;
+    ctx.font = `bold ${Math.round(titleMm*SC)}px Georgia,serif`;
+  }
+  // Grundlinie so setzen, dass die Oberlängen unter der Bildkarte bleiben
+  const mnYmm = cardY + cardH + 6 + titleMm * 0.72;
+  ctx.fillStyle = acStr;
+  ctx.fillText(mspaced, W/2, Math.round(mnYmm * SC));
 
   // 4. Kalender-Grid in Pixel
-  const gridTopPx = Math.round((mnYmm + 7) * SC);
+  const gridTopPx = Math.round((mnYmm + 8) * SC);
   const gridBotPx = Math.round((ph - mbot) * SC);
   const gridHpx   = gridBotPx - gridTopPx;
   const colWpx    = Math.round((cardW * SC) / 7);
@@ -1565,9 +1613,15 @@ async function drawMonth(doc, pw, ph, month, year, img, holidays, accent, ar, ag
       ctx.textAlign = 'center';
       ctx.fillText(String(day), x, rMidPx);
       if(isH) {
-        ctx.font = `${Math.round(5*SC)}px Arial,sans-serif`;
+        // Feiertagsname unter die Zahl setzen und auf Spaltenbreite verkleinern
+        let hMm = 3.6;
+        ctx.font = `${Math.round(hMm*SC)}px Arial,sans-serif`;
+        while(ctx.measureText(holidays[hk]).width > colWpx - 4 && hMm > 2.0) {
+          hMm -= 0.2;
+          ctx.font = `${Math.round(hMm*SC)}px Arial,sans-serif`;
+        }
         ctx.fillStyle = acStr;
-        ctx.fillText(holidays[hk], x, rMidPx + Math.round(1.5*SC));
+        ctx.fillText(holidays[hk], x, rMidPx + Math.round(4.6*SC));
       }
     });
   });
@@ -1597,7 +1651,7 @@ async function drawBack(doc, pw, ph, year, brandName, brandSocial,
     const tc=document.createElement('canvas');
     tc.width=cw2;tc.height=ch2;
     const tx=tc.getContext('2d');
-    tx.drawImage(img,0,0,cw2,ch2);
+    drawCover(tx,img,0,0,cw2,ch2);
     tx.fillStyle=TH.backTile; tx.fillRect(0,0,cw2,ch2);
     ctx.drawImage(tc,col*cw2,row*ch2);
   }
