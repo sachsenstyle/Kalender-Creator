@@ -561,6 +561,23 @@
         <div class="chip" data-group="thema" data-val="a single insect in macro view" data-motiv="1" onclick="selChip(this)">🦋 Insekten</div>
         <div class="chip" data-group="thema" data-val="a single herb or plant, botanical study" data-motiv="1" onclick="selChip(this)">🌿 Kräuter</div>
         <div class="chip" data-group="thema" data-val="a single ancient castle or ruin in a European landscape" data-motiv="0" onclick="selChip(this)">🏰 Burgen</div>
+        <div class="chip" id="chip-eigen" data-group="thema" data-val="" data-motiv="1" onclick="selChip(this)">✏️ Eigenes Thema</div>
+      </div>
+
+      <!-- Freies Thema -->
+      <div id="eigen-box" style="display:none;margin-top:14px">
+        <label>Dein Thema</label>
+        <input type="text" id="eigen-text" placeholder="z. B. FSV Zwickau, mein Garten, alte Motorräder, Nähen …"
+               oninput="setEigen()">
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px">
+          <div class="chip active" id="eigen-motiv-1" onclick="setEigenArt(1)">🎯 Ein Motiv groß im Bild</div>
+          <div class="chip" id="eigen-motiv-0" onclick="setEigenArt(0)">🏞️ Weite Szene / Landschaft</div>
+        </div>
+        <div class="info-box" style="margin-top:12px">
+          Schreib einfach hin, was zu sehen sein soll – auf Deutsch reicht.
+          <br>Bei Vereinen und Marken: Wappen und Logos kommen bei KI-Bildern meist falsch heraus.
+          Beschreib lieber Farben und Stimmung, etwa „Fußballstadion in Rot und Weiß".
+        </div>
       </div>
 
       <div class="sep"></div>
@@ -984,7 +1001,30 @@ function selChip(el) {
   document.querySelectorAll(`.chip[data-group="${group}"]`).forEach(c => c.classList.remove('active'));
   el.classList.add('active');
   promptData[group] = el.dataset.val;
-  if(group === 'thema') promptData.motiv = el.dataset.motiv === '1';
+  if(group === 'thema') {
+    promptData.motiv = el.dataset.motiv === '1';
+    const eigen = (el.id === 'chip-eigen');
+    document.getElementById('eigen-box').style.display = eigen ? '' : 'none';
+    if(eigen) { setEigen(); return; }
+  }
+  buildPrompt();
+}
+
+// Freies Thema: Text übernehmen
+function setEigen() {
+  const txt = document.getElementById('eigen-text').value.trim();
+  const chip = document.getElementById('chip-eigen');
+  promptData.thema = txt ? txt : 'a single owl';
+  chip.dataset.val = promptData.thema;
+  buildPrompt();
+}
+
+// Freies Thema: Motiv oder weite Szene
+function setEigenArt(flag) {
+  document.getElementById('eigen-motiv-1').classList.toggle('active', flag === 1);
+  document.getElementById('eigen-motiv-0').classList.toggle('active', flag === 0);
+  document.getElementById('chip-eigen').dataset.motiv = String(flag);
+  promptData.motiv = (flag === 1);
   buildPrompt();
 }
 
