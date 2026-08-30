@@ -243,6 +243,16 @@
     transition: border-color 0.2s;
   }
   .slot:hover { border-color: var(--red); }
+  .slot-del {
+    position: absolute; top: 6px; right: 6px; z-index: 5;
+    width: 26px; height: 26px; border-radius: 50%;
+    background: rgba(0,0,0,0.72); color: #fff;
+    align-items: center; justify-content: center;
+    font-size: 15px; line-height: 1; cursor: pointer;
+    border: 1px solid rgba(255,255,255,0.35);
+    transition: background 0.2s;
+  }
+  .slot-del:hover { background: var(--red); }
   .slot input[type=file] {
     position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
   }
@@ -730,6 +740,8 @@
         <div class="info-box">
           <strong>Klicke auf jeden Monat</strong> um das Bild hochzuladen. JPG oder PNG.
           <br><br>
+          Zum Austauschen auf das <strong>✕</strong> oben rechts im Bild klicken – dann ist der Monat wieder frei.
+          <br><br>
           Für einen scharfen A4-Druck sollte jedes Bild mindestens <strong>2000 Pixel breit</strong> sein.
           Bilder aus einer 12er-Collage sind dafür zu klein und werden beim Druck unscharf.
         </div>
@@ -1127,8 +1139,10 @@ function buildSlots() {
     slot.className = 'slot';
     slot.id = 'slot-'+i;
     slot.innerHTML = `
-      <input type="file" accept="image/*" onchange="loadSlot(${i}, this.files[0])">
+      <input type="file" accept="image/*" id="slot-file-${i}" onchange="loadSlot(${i}, this.files[0])">
       <div class="slot-empty" id="slot-empty-${i}"><span>+</span></div>
+      <div class="slot-del" id="slot-del-${i}" title="Bild entfernen"
+           style="display:none" onclick="clearSlot(event, ${i})">✕</div>
       <div class="slot-label">${m}</div>
     `;
     grid.appendChild(slot);
@@ -1152,11 +1166,26 @@ function loadSlot(idx, file) {
       }
       imgEl.src = e.target.result;
       imgEl.style.cssText = 'width:100%;height:100%;object-fit:cover;position:absolute;inset:0';
+      document.getElementById('slot-del-'+idx).style.display = 'flex';
       checkImages();
     };
     img.src = e.target.result;
   };
   reader.readAsDataURL(file);
+}
+
+// Einzelnes Bild wieder entfernen, damit ein neues hochgeladen werden kann
+function clearSlot(ev, idx) {
+  ev.stopPropagation();          // nicht den Datei-Dialog öffnen
+  ev.preventDefault();
+  state.images[idx] = null;
+  const slot = document.getElementById('slot-'+idx);
+  const imgEl = slot.querySelector('img.slot-img');
+  if(imgEl) imgEl.remove();
+  document.getElementById('slot-empty-'+idx).style.display = '';
+  document.getElementById('slot-del-'+idx).style.display = 'none';
+  document.getElementById('slot-file-'+idx).value = '';   // gleiche Datei erneut wählbar
+  checkImages();
 }
 
 function checkImages() {
