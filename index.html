@@ -713,18 +713,28 @@
       <div class="sep"></div>
       <div class="card-title">Design</div>
       <div style="display:flex;gap:12px;flex-wrap:wrap">
-        <div class="design-opt selected" data-design="hell" onclick="selDesign(this)"
-             style="flex:1;min-width:190px;cursor:pointer;border-radius:10px;padding:14px;
-                    background:#ffffff;color:#2d2d2d;border:3px solid var(--red)">
+        <div class="design-opt" data-design="hell" onclick="selDesign(this)"
+             style="flex:1;min-width:175px;cursor:pointer;border-radius:10px;padding:14px;
+                    background:#ffffff;color:#2d2d2d;border:3px solid rgba(255,255,255,0.15)">
           <strong>Hell</strong><br>
-          <span style="font-size:13px">Weißer Hintergrund, dunkle Schrift.<br>Für den Druck empfohlen – spart Tinte, alles gut lesbar.</span>
+          <span style="font-size:13px">Weißer Hintergrund, dunkle Schrift. Das Bild scheint nur ganz schwach durch.</span>
+        </div>
+        <div class="design-opt selected" data-design="mittel" onclick="selDesign(this)"
+             style="flex:1;min-width:175px;cursor:pointer;border-radius:10px;padding:14px;
+                    background:#eeeae2;color:#282622;border:3px solid var(--red)">
+          <strong>Mittel</strong><br>
+          <span style="font-size:13px">Warmer heller Ton, das Monatsbild scheint deutlich als Hintergrund durch. Schrift dunkel.</span>
         </div>
         <div class="design-opt" data-design="dunkel" onclick="selDesign(this)"
-             style="flex:1;min-width:190px;cursor:pointer;border-radius:10px;padding:14px;
+             style="flex:1;min-width:175px;cursor:pointer;border-radius:10px;padding:14px;
                     background:#2a2a1e;color:#f0f0e8;border:3px solid rgba(255,255,255,0.15)">
           <strong>Dunkel</strong><br>
-          <span style="font-size:13px">Dunkler Hintergrund, helle Schrift.<br>Wirkt am Bildschirm edel, braucht beim Druck viel Tinte.</span>
+          <span style="font-size:13px">Dunkler Hintergrund, helle Schrift. Am Bildschirm edel, im Druck oft zu dunkel.</span>
         </div>
+      </div>
+      <div class="info-box" style="margin-top:12px">
+        Bei <strong>Mittel</strong> werden Monatsname, Sonn- und Feiertage automatisch etwas dunkler
+        als die gewählte Akzentfarbe gedruckt – sonst verschwinden sie in den hellen Stellen des Hintergrundbildes.
       </div>
       <div class="sep"></div>
       <div class="card-title">Akzent-Farbe</div>
@@ -886,7 +896,7 @@ let state = {
   images: new Array(12).fill(null),
   accentColor: '#d40d0d',
   year: 2027,
-  design: 'hell',
+  design: 'mittel',
 };
 
 // Zeichnet ein Bild formatfüllend, ohne es zu verzerren.
@@ -906,7 +916,36 @@ function drawImageCover(ctx, img, dx, dy, dw, dh) {
 }
 
 // Farbwerte je Design-Variante (hell = druckoptimiert, dunkel = Original)
+// Akzentfarbe abdunkeln — nötig, wenn Text auf einem sichtbaren Wasserzeichen steht
+function shadeHex(hex, f) {
+  const {r,g,b} = hexToRgb(hex);
+  const c = n => Math.max(0, Math.min(255, Math.round(n * f)));
+  return `rgb(${c(r)},${c(g)},${c(b)})`;
+}
+
 function theme() {
+  if(state.design === 'mittel') {
+    return {
+      pageBg:    '#eeeae2',
+      wmAlpha:   0.55,
+      wmVeil:    'rgba(245,242,236,0.53)',
+      textMain:  'rgba(40,38,34,1)',
+      lineHead:  'rgba(60,56,48,0.45)',
+      lineWeek:  'rgba(60,56,48,0.28)',
+      cardEdge:  'rgba(252,250,246,1.0)',
+      coverBg:   '#eeeae2',
+      coverTile: 'rgba(245,242,236,0.50)',
+      coverVeil: 'rgba(245,242,236,0.22)',
+      coverText: 'rgba(40,38,34,1)',
+      coverDot:  'rgba(60,56,48,0.45)',
+      coverLine: 'rgba(60,56,48,0.32)',
+      backTile:  'rgba(245,242,236,0.60)',
+      backVeil:  'rgba(245,242,236,0.28)',
+      boxFill:   [250,248,244],
+      boxText:   [40,38,34],
+      accentShade: 0.58,
+    };
+  }
   if(state.design === 'dunkel') {
     return {
       pageBg:    '#2a2a1e',
@@ -1527,8 +1566,11 @@ async function drawCover(doc, pw, ph, year, title, brand, accent, ar, ag, ab, SC
   ctx.beginPath(); ctx.moveTo(W*0.08,H*0.60); ctx.lineTo(W*0.92,H*0.60); ctx.stroke();
   ctx.beginPath(); ctx.moveTo(W*0.08,H*0.38); ctx.lineTo(W*0.92,H*0.38); ctx.stroke();
 
+  // Akzent für Text — auf hellem Grund mit sichtbarem Bild abgedunkelt
+  const acText = TH.accentShade ? shadeHex(accent, TH.accentShade) : accent;
+
   // Title text — Größe automatisch anpassen damit es passt
-  ctx.fillStyle=accent;
+  ctx.fillStyle=acText;
   ctx.textAlign='center';
   let titleFontSize = 14*SC;
   ctx.font=`bold ${titleFontSize}px Georgia,serif`;
@@ -1539,7 +1581,7 @@ async function drawCover(doc, pw, ph, year, title, brand, accent, ar, ag, ab, SC
   ctx.fillText(title.toUpperCase(), W/2, H*0.58);
 
   // Jahr — passend zur Seitengröße
-  ctx.fillStyle=accent;
+  ctx.fillStyle=acText;
   ctx.font=`bold ${58*SC}px Georgia,serif`;
   ctx.fillText(String(year), W/2, H*0.50);
 
@@ -1573,7 +1615,9 @@ async function drawMonth(doc, pw, ph, month, year, img, holidays, accent, ar, ag
   const cardX = mx, cardY = mtop;
 
   const acRgb = hexToRgb(accent);
-  const acStr = `rgb(${acRgb.r},${acRgb.g},${acRgb.b})`;
+  const acStr = theme().accentShade
+    ? shadeHex(accent, theme().accentShade)
+    : `rgb(${acRgb.r},${acRgb.g},${acRgb.b})`;
 
   // Canvas für die ganze Seite
   const cvs = document.createElement('canvas');
