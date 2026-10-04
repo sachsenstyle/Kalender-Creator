@@ -597,14 +597,19 @@
       <div class="sep"></div>
 
       <!-- Stimmung -->
-      <label>Stimmung & Licht</label>
+      <label>Stimmung & Licht (mehrere möglich – werden auf die Monate verteilt)</label>
       <div class="chip-group" id="chips-mood">
-        <div class="chip active" data-group="mood" data-val="dramatic natural lighting, moody atmosphere" onclick="selChip(this)">🌩️ Dramatisch</div>
-        <div class="chip" data-group="mood" data-val="warm golden hour light, soft and inviting" onclick="selChip(this)">🌅 Goldene Stunde</div>
-        <div class="chip" data-group="mood" data-val="misty morning atmosphere, ethereal fog" onclick="selChip(this)">🌫️ Mystisch</div>
-        <div class="chip" data-group="mood" data-val="bright sunny daylight, vivid colors" onclick="selChip(this)">☀️ Sonnig</div>
-        <div class="chip" data-group="mood" data-val="cold winter light, frosty and serene" onclick="selChip(this)">❄️ Winterlich</div>
-        <div class="chip" data-group="mood" data-val="twilight blue hour, calm and peaceful" onclick="selChip(this)">🌙 Dämmerung</div>
+        <div class="chip active" data-group="mood" data-val="dramatic natural lighting, moody atmosphere" onclick="toggleMood(this)">🌩️ Dramatisch</div>
+        <div class="chip" data-group="mood" data-val="warm golden hour light, soft and inviting" onclick="toggleMood(this)">🌅 Goldene Stunde</div>
+        <div class="chip" data-group="mood" data-val="misty morning atmosphere, ethereal fog" onclick="toggleMood(this)">🌫️ Mystisch</div>
+        <div class="chip" data-group="mood" data-val="bright sunny daylight, vivid colors" onclick="toggleMood(this)">☀️ Sonnig</div>
+        <div class="chip" data-group="mood" data-val="cold winter light, frosty and serene" onclick="toggleMood(this)">❄️ Winterlich</div>
+        <div class="chip" data-group="mood" data-val="twilight blue hour, calm and peaceful" onclick="toggleMood(this)">🌙 Dämmerung</div>
+      </div>
+      <div class="info-box" style="margin-top:10px">
+        Wähl so viele Stimmungen, wie du magst. Sie werden abwechselnd auf die 12 Monate verteilt –
+        ❄️ Winterlich landet dabei nur in Dezember, Januar und Februar.
+        Unten bei jedem Monat kannst du die Stimmung außerdem einzeln ändern.
       </div>
 
       <div class="sep"></div>
@@ -1067,6 +1072,44 @@ function setEigenArt(flag) {
   buildPrompt();
 }
 
+// ── Stimmung & Licht: Mehrfachauswahl + Einstellung pro Monat ──
+const MOOD_LABELS = {};
+document.querySelectorAll('.chip[data-group="mood"]').forEach(c => { MOOD_LABELS[c.dataset.val] = c.textContent.trim(); });
+let moodSel = ['dramatic natural lighting, moody atmosphere'];
+const moodOverride = Array(12).fill(null);
+const WINTER_MOOD = 'cold winter light, frosty and serene';
+const WINTER_MONTHS = [11, 0, 1];
+
+function toggleMood(el) {
+  const v = el.dataset.val;
+  if(moodSel.includes(v)) {
+    if(moodSel.length === 1) return;            // mindestens eine Stimmung bleibt aktiv
+    moodSel = moodSel.filter(x => x !== v);
+    el.classList.remove('active');
+  } else {
+    moodSel.push(v);
+    el.classList.add('active');
+  }
+  buildPrompt();
+}
+
+// Automatische Verteilung: Winterlich nur im Winter, der Rest wechselt sich ab
+function autoMood(i) {
+  const winterOk = moodSel.includes(WINTER_MOOD);
+  const rest = moodSel.filter(m => m !== WINTER_MOOD);
+  if(WINTER_MONTHS.includes(i) && winterOk) return WINTER_MOOD;
+  if(rest.length === 0) return WINTER_MOOD;
+  const nichtWinter = [...Array(12).keys()].filter(m => !(winterOk && WINTER_MONTHS.includes(m)));
+  const pos = nichtWinter.indexOf(i);
+  return rest[(pos < 0 ? i : pos) % rest.length];
+}
+function moodFor(i) { return moodOverride[i] || autoMood(i); }
+
+function setMonthMood(i, val) {
+  moodOverride[i] = val || null;
+  buildPrompt();
+}
+
 function toggleExtra(el) {
   const key = el.dataset.key;
   extras[key].active = !extras[key].active;
@@ -1143,7 +1186,7 @@ function buildPrompt() {
       `Composition: ${currentViews()[viewOrder[i]]}. ` +
       scaleLine +
       `Style: ${promptData.stil}. ` +
-      `Mood and lighting: ${promptData.mood}. ` +
+      `Mood and lighting: ${moodFor(i)}. ` +
       `Color palette: ${promptData.farbe}${extraStr}. ` +
       `Aspect ratio 16:9, landscape orientation, highest available resolution (at least 1536 pixels wide). ` +
       `Exactly one subject in one complete scene – no grid, no collage, no split panels, no multiple variants, no text, no borders.`
@@ -1166,7 +1209,20 @@ function buildPrompt() {
                         'border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;' +
                         "font-family:'Source Sans 3',sans-serif;flex-shrink:0";
     btn.onclick = () => copyOne(i, btn);
-    head.appendChild(name); head.appendChild(btn);
+    const sel = document.createElement('select');
+    sel.style.cssText = 'margin-left:auto;margin-right:8px;font-size:12px;padding:4px 6px;border-radius:6px;max-width:190px';
+    const optAuto = document.createElement('option');
+    optAuto.value = '';
+    optAuto.textContent = 'Automatisch: ' + (MOOD_LABELS[autoMood(i)] || '');
+    sel.appendChild(optAuto);
+    Object.keys(MOOD_LABELS).forEach(v => {
+      const o = document.createElement('option');
+      o.value = v; o.textContent = MOOD_LABELS[v];
+      if(moodOverride[i] === v) o.selected = true;
+      sel.appendChild(o);
+    });
+    sel.onchange = () => setMonthMood(i, sel.value);
+    head.appendChild(name); head.appendChild(sel); head.appendChild(btn);
     const txt = document.createElement('div');
     txt.textContent = promptTexts[i];
     txt.style.cssText = 'margin-top:8px;font-size:12px;line-height:1.6;color:rgba(255,255,255,0.62)';
