@@ -253,6 +253,19 @@
     transition: background 0.2s;
   }
   .slot-del:hover { background: var(--red); }
+  .slot-move {
+    position: absolute; bottom: 26px; left: 0; right: 0; z-index: 5;
+    justify-content: center; gap: 8px;
+  }
+  .slot-arrow {
+    width: 26px; height: 26px; border-radius: 50%;
+    background: rgba(0,0,0,0.72); color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 17px; line-height: 1; cursor: pointer;
+    border: 1px solid rgba(255,255,255,0.35);
+    transition: background 0.2s; user-select: none;
+  }
+  .slot-arrow:hover { background: var(--red); }
   .slot input[type=file] {
     position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
   }
@@ -708,7 +721,7 @@
         </div>
         <div>
           <label>Format</label>
-          <select id="cal-format">
+          <select id="cal-format" onchange="buildPrompt(); updateSummary();">
             <option value="a4">A4 Hochformat (210×297mm)</option>
             <option value="a4l">A4 Querformat</option>
             <option value="a3">A3 Hochformat (297×420mm)</option>
@@ -773,6 +786,8 @@
           <strong>Klicke auf jeden Monat</strong> um das Bild hochzuladen. JPG oder PNG.
           <br><br>
           Zum Austauschen auf das <strong>✕</strong> oben rechts im Bild klicken – dann ist der Monat wieder frei.
+          Mit den Pfeilen <strong>‹ ›</strong> unten im Bild schiebst du es einen Monat weiter oder zurück;
+          die beiden Bilder tauschen dabei einfach die Plätze.
           <br><br>
           Für einen scharfen A4-Druck sollte jedes Bild mindestens <strong>2000 Pixel breit</strong> sein.
           Bilder aus einer 12er-Collage sind dafür zu klein und werden beim Druck unscharf.
@@ -1172,6 +1187,12 @@ function buildPrompt() {
   const extraParts = Object.values(extras).filter(e=>e.active).map(e=>e.text);
   const extraStr = extraParts.length ? ', ' + extraParts.join(', ') : '';
 
+  // Das Seitenverhältnis muss zum Kalenderformat passen, sonst schneidet
+  // das Tool oben und unten etwas vom Bild ab.
+  const fmtEl  = document.getElementById('cal-format');
+  const istQuer = fmtEl && fmtEl.value === 'a4l';
+  const ratio  = istQuer ? '3:1 (wide panorama)' : '16:9';
+
   // Bei Tieren und Pflanzen muss das Motiv den Bildausschnitt dominieren,
   // sonst wirkt es auf dem Kalenderblatt verloren.
   const scaleLine = promptData.motiv
@@ -1188,7 +1209,7 @@ function buildPrompt() {
       `Style: ${promptData.stil}. ` +
       `Mood and lighting: ${moodFor(i)}. ` +
       `Color palette: ${promptData.farbe}${extraStr}. ` +
-      `Aspect ratio 16:9, landscape orientation, highest available resolution (at least 1536 pixels wide). ` +
+      `Aspect ratio ${ratio}, landscape orientation, highest available resolution (at least 1536 pixels wide). ` +
       `Exactly one subject in one complete scene – no grid, no collage, no split panels, no multiple variants, no text, no borders.`
   );
 
@@ -1278,6 +1299,10 @@ function buildSlots() {
       <div class="slot-empty" id="slot-empty-${i}"><span>+</span></div>
       <div class="slot-del" id="slot-del-${i}" title="Bild entfernen"
            style="display:none" onclick="clearSlot(event, ${i})">✕</div>
+      <div class="slot-move" id="slot-move-${i}" style="display:none">
+        <span class="slot-arrow" title="einen Monat zurück" onclick="moveSlot(event, ${i}, -1)">‹</span>
+        <span class="slot-arrow" title="einen Monat weiter" onclick="moveSlot(event, ${i}, 1)">›</span>
+      </div>
       <div class="slot-label">${m}</div>
     `;
     grid.appendChild(slot);
@@ -1301,8 +1326,7 @@ function loadSlot(idx, file) {
       }
       imgEl.src = e.target.result;
       imgEl.style.cssText = 'width:100%;height:100%;object-fit:cover;position:absolute;inset:0';
-      document.getElementById('slot-del-'+idx).style.display = 'flex';
-      checkImages();
+      refreshSlots();
     };
     img.src = e.target.result;
   };
@@ -1314,13 +1338,53 @@ function clearSlot(ev, idx) {
   ev.stopPropagation();          // nicht den Datei-Dialog öffnen
   ev.preventDefault();
   state.images[idx] = null;
-  const slot = document.getElementById('slot-'+idx);
-  const imgEl = slot.querySelector('img.slot-img');
-  if(imgEl) imgEl.remove();
-  document.getElementById('slot-empty-'+idx).style.display = '';
-  document.getElementById('slot-del-'+idx).style.display = 'none';
-  document.getElementById('slot-file-'+idx).value = '';   // gleiche Datei erneut wählbar
+  refreshSlots();
+}
+
+// Zeigt für alle 12 Monate genau das an, was in state.images steht.
+// Wird nach jedem Verschieben aufgerufen.
+function refreshSlots() {
+  state.images.forEach((img, i) => {
+    const slot = document.getElementById('slot-'+i);
+    if(!slot) return;
+    let imgEl = slot.querySelector('img.slot-img');
+    if(img) {
+      if(!imgEl) {
+        imgEl = document.createElement('img');
+        imgEl.className = 'slot-img';
+        imgEl.style.cssText = 'width:100%;height:100%;object-fit:cover;position:absolute;inset:0';
+        slot.insertBefore(imgEl, slot.querySelector('.slot-label'));
+      }
+      imgEl.src = img.src;
+      document.getElementById('slot-empty-'+i).style.display = 'none';
+      document.getElementById('slot-del-'+i).style.display  = 'flex';
+      document.getElementById('slot-move-'+i).style.display = 'flex';
+    } else {
+      if(imgEl) imgEl.remove();
+      document.getElementById('slot-empty-'+i).style.display = '';
+      document.getElementById('slot-del-'+i).style.display  = 'none';
+      document.getElementById('slot-move-'+i).style.display = 'none';
+      const f = document.getElementById('slot-file-'+i);
+      if(f) f.value = '';
+    }
+  });
   checkImages();
+}
+
+// Bild einen Monat nach vorn oder zurück schieben.
+// Steht dort schon ein Bild, tauschen die beiden einfach die Plätze.
+function moveSlot(ev, idx, dir) {
+  ev.stopPropagation();
+  ev.preventDefault();
+  const ziel = idx + dir;
+  if(ziel < 0 || ziel > 11) return;          // über Januar bzw. Dezember hinaus geht nicht
+  const a = state.images[idx];
+  state.images[idx]  = state.images[ziel];
+  state.images[ziel] = a;
+  refreshSlots();
+  const z = document.getElementById('slot-'+ziel);
+  if(z) { z.style.outline = '3px solid var(--red)';
+          setTimeout(() => { z.style.outline = ''; }, 700); }
 }
 
 function checkImages() {
@@ -1665,10 +1729,15 @@ async function drawMonth(doc, pw, ph, month, year, img, holidays, accent, ar, ag
   const cal = buildCal(year, month);
   const nw  = cal.length;
 
-  // Feste Bildhöhe in mm — bewusst konservativ damit Grid immer passt
-  const cardH = 107;  // mm — entspricht 16:9 bei 190 mm Breite, für alle Monate gleich
+  // Bildhöhe und alle Schriftgrößen richten sich nach dem Seitenformat.
+  // Feste Werte funktionieren nur bei A4 hoch — bei A4 quer wird das Gitter
+  // sonst gequetscht und bei A3 reißen Riesenlücken auf.
+  const avail = ph - mtop - mbot;          // nutzbare Höhe
   const cardW = pw - 2*mx;
+  const quer  = pw > ph;
+  const cardH = Math.min(cardW * 9/16, avail * (quer ? 0.46 : 0.50));
   const cardX = mx, cardY = mtop;
+  const restH = avail - cardH;             // bleibt für Monatsname und Gitter
 
   const acRgb = hexToRgb(accent);
   const acStr = theme().accentShade
@@ -1730,7 +1799,7 @@ async function drawMonth(doc, pw, ph, month, year, img, holidays, accent, ar, ag
   // 3. Monatsname – Größe wird automatisch angepasst, damit er nie ins Bild ragt
   const mspaced = MONTHS_DE[month-1].split('').join(' ');
   const maxTitleW = (cardW - 10) * SC;          // Breite darf die Bildkarte nicht überschreiten
-  let titleMm = 15;                              // Grundgröße in mm (vorher 21)
+  let titleMm = restH * 0.087;                   // wächst und schrumpft mit dem Format
   ctx.textAlign = 'center';
   ctx.textBaseline = 'alphabetic';
   ctx.font = `bold ${Math.round(titleMm*SC)}px Georgia,serif`;
@@ -1739,22 +1808,30 @@ async function drawMonth(doc, pw, ph, month, year, img, holidays, accent, ar, ag
     ctx.font = `bold ${Math.round(titleMm*SC)}px Georgia,serif`;
   }
   // Grundlinie so setzen, dass die Oberlängen unter der Bildkarte bleiben
-  const mnYmm = cardY + cardH + 6 + titleMm * 0.72;
+  const mnYmm = cardY + cardH + titleMm * 0.4 + titleMm * 0.72;
   ctx.fillStyle = acStr;
   ctx.fillText(mspaced, W/2, Math.round(mnYmm * SC));
 
   // 4. Kalender-Grid in Pixel
-  const gridTopPx = Math.round((mnYmm + 8) * SC);
+  const gridTopPx = Math.round((mnYmm + titleMm * 0.55) * SC);
   const gridBotPx = Math.round((ph - mbot) * SC);
   const gridHpx   = gridBotPx - gridTopPx;
   const colWpx    = Math.round((cardW * SC) / 7);
   const rowHpx    = gridHpx / (nw + 1);
   const leftPx    = Math.round(mx * SC);
 
+  // Schriftgrößen aus der Zeilenhöhe ableiten — so passt nichts mehr übereinander,
+  // egal ob A4 hoch, A4 quer oder A3 und egal ob der Monat 5 oder 6 Wochen hat.
+  const rowHmm    = rowHpx / SC;
+  const fDay      = rowHmm * 0.58;   // Tageszahlen
+  const fHead     = rowHmm * 0.40;   // MO DI MI …
+  const fHoli     = rowHmm * 0.17;   // Feiertagsname
+  const holiDrop  = rowHmm * 0.22;   // Abstand des Feiertagsnamens unter der Zahl
+
   // Kopfzeile
   DAYS_DE.forEach((d, i) => {
     ctx.fillStyle = i===6 ? acStr : TH.textMain;
-    ctx.font = `bold ${Math.round(9*SC)}px Arial,sans-serif`;
+    ctx.font = `bold ${Math.round(fHead*SC)}px Arial,sans-serif`;
     ctx.textAlign = 'center';
     ctx.fillText(d, leftPx + Math.round(i*colWpx + colWpx/2), Math.round(gridTopPx + rowHpx*0.72));
   });
@@ -1778,19 +1855,19 @@ async function drawMonth(doc, pw, ph, month, year, img, holidays, accent, ar, ag
       const isH = !!holidays[hk];
       const isS = di===6;
       ctx.fillStyle = (isH||isS) ? acStr : TH.textMain;
-      ctx.font = (isH||isS) ? `bold ${Math.round(13*SC)}px Arial,sans-serif` : `${Math.round(13*SC)}px Arial,sans-serif`;
+      ctx.font = (isH||isS) ? `bold ${Math.round(fDay*SC)}px Arial,sans-serif` : `${Math.round(fDay*SC)}px Arial,sans-serif`;
       ctx.textAlign = 'center';
       ctx.fillText(String(day), x, rMidPx);
       if(isH) {
         // Feiertagsname unter die Zahl setzen und auf Spaltenbreite verkleinern
-        let hMm = 3.6;
+        let hMm = fHoli;
         ctx.font = `${Math.round(hMm*SC)}px Arial,sans-serif`;
-        while(ctx.measureText(holidays[hk]).width > colWpx - 4 && hMm > 2.0) {
-          hMm -= 0.2;
+        while(ctx.measureText(holidays[hk]).width > colWpx - 4 && hMm > 1.6) {
+          hMm -= 0.1;
           ctx.font = `${Math.round(hMm*SC)}px Arial,sans-serif`;
         }
         ctx.fillStyle = acStr;
-        ctx.fillText(holidays[hk], x, rMidPx + Math.round(4.6*SC));
+        ctx.fillText(holidays[hk], x, rMidPx + Math.round(holiDrop*SC));
       }
     });
   });
