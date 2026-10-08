@@ -732,11 +732,12 @@
           <label>Format</label>
           <select id="cal-format" onchange="buildPrompt(); updateSummary();">
             <option value="a4">A4 Hochformat (210×297mm)</option>
-            <option value="a4l">A4 Querformat</option>
+            <option value="a4l">A4 Querformat (297×210mm)</option>
             <option value="a3">A3 Hochformat (297×420mm)</option>
           </select>
         </div>
       </div>
+      <div class="info-box" style="margin-top:14px" id="format-hinweis"></div>
       <div class="sep"></div>
       <div class="card-title">Design</div>
       <div style="display:flex;gap:12px;flex-wrap:wrap">
@@ -1317,7 +1318,20 @@ function buildPrompt() {
   // das Tool oben und unten etwas vom Bild ab.
   const fmtEl  = document.getElementById('cal-format');
   const istQuer = fmtEl && fmtEl.value === 'a4l';
-  const ratio  = istQuer ? '3:1 (wide panorama)' : '16:9';
+
+  const hw = document.getElementById('format-hinweis');
+  if(hw) {
+    hw.innerHTML = istQuer
+      ? '<strong>A4 Querformat:</strong> Das Bild steht hochkant links, Monatsname und Kalendarium rechts daneben. ' +
+        'Du brauchst dafür <strong>hochkante Bilder im Verhältnis 9:16</strong> – die Prompts oben verlangen das schon so. ' +
+        'Querformat-Bilder werden links und rechts stark beschnitten.'
+      : '<strong>Bild über die ganze Breite,</strong> Monatsname und Kalendarium darunter. ' +
+        'Du brauchst dafür <strong>querformatige Bilder im Verhältnis 16:9</strong>.';
+  }
+  // A4 quer: Bild steht hochkant links neben dem Kalendarium
+  const ratio  = istQuer
+    ? '9:16, portrait orientation (upright)'
+    : '16:9, landscape orientation';
 
   // Bei Tieren und Pflanzen muss das Motiv den Bildausschnitt dominieren,
   // sonst wirkt es auf dem Kalenderblatt verloren.
@@ -1343,7 +1357,7 @@ function buildPrompt() {
       `Style: ${promptData.stil}. ` +
       `Mood and lighting: ${moodFor(i)}. ` +
       `Color palette: ${promptData.farbe}${extraStr}. ` +
-      `Aspect ratio ${ratio}, landscape orientation, highest available resolution (at least 1536 pixels wide). ` +
+      `Aspect ratio ${ratio}, highest available resolution (at least 1536 pixels on the long side). ` +
       `One complete scene – no grid, no collage, no split panels, no multiple variants, no text, no borders. ` +
       `Most important: the picture must clearly and recognisably show ${motiv}. ` +
       `Do not drift to any other subject, and add nothing that was not asked for.`;
@@ -1869,11 +1883,35 @@ async function drawMonth(doc, pw, ph, month, year, img, holidays, accent, ar, ag
   // Feste Werte funktionieren nur bei A4 hoch — bei A4 quer wird das Gitter
   // sonst gequetscht und bei A3 reißen Riesenlücken auf.
   const avail = ph - mtop - mbot;          // nutzbare Höhe
-  const cardW = pw - 2*mx;
   const quer  = pw > ph;
-  const cardH = Math.min(cardW * 9/16, avail * (quer ? 0.46 : 0.50));
-  const cardX = mx, cardY = mtop;
-  const restH = avail - cardH;             // bleibt für Monatsname und Gitter
+
+  // Querformat bekommt ein eigenes Layout: Bild hochkant links,
+  // Monatsname und Kalendarium rechts daneben. Ein Bild über die ganze
+  // Breite wäre auf einer flachen Seite nur ein Panoramastreifen und
+  // dem Kalendarium bliebe zu wenig Platz.
+  const gap = 8;
+  let cardW, cardH, cardX, cardY, restH;
+  let kalX, kalW, kalTop, kalBot;
+
+  if(quer) {
+    cardH = avail;
+    cardW = cardH * 9/16;                  // hochkant 9:16
+    cardX = mx; cardY = mtop;
+    kalX  = mx + cardW + gap;
+    kalW  = pw - mx - kalX;
+    kalTop = mtop;
+    kalBot = ph - mbot;
+    restH = avail;                         // Monatsname und Gitter teilen die volle Höhe
+  } else {
+    cardW = pw - 2*mx;
+    cardH = Math.min(cardW * 9/16, avail * 0.50);
+    cardX = mx; cardY = mtop;
+    kalX  = mx;
+    kalW  = cardW;
+    kalTop = null;                         // ergibt sich unten aus dem Monatsnamen
+    kalBot = ph - mbot;
+    restH = avail - cardH;                 // bleibt für Monatsname und Gitter
+  }
 
   const acRgb = hexToRgb(accent);
   const acStr = theme().accentShade
@@ -1932,10 +1970,10 @@ async function drawMonth(doc, pw, ph, month, year, img, holidays, accent, ar, ag
   ctx.stroke();
   ctx.restore();
 
-  // 3. Monatsname – Größe wird automatisch angepasst, damit er nie ins Bild ragt
+  // 3. Monatsname – Größe und Platz richten sich nach dem Layout
   const mspaced = MONTHS_DE[month-1].split('').join(' ');
-  const maxTitleW = (cardW - 10) * SC;          // Breite darf die Bildkarte nicht überschreiten
-  let titleMm = restH * 0.087;                   // wächst und schrumpft mit dem Format
+  const maxTitleW = (kalW - 10) * SC;           // darf die Kalenderspalte nicht überschreiten
+  let titleMm = quer ? avail * 0.095 : restH * 0.087;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'alphabetic';
   ctx.font = `bold ${Math.round(titleMm*SC)}px Georgia,serif`;
@@ -1943,18 +1981,22 @@ async function drawMonth(doc, pw, ph, month, year, img, holidays, accent, ar, ag
     titleMm -= 0.5;
     ctx.font = `bold ${Math.round(titleMm*SC)}px Georgia,serif`;
   }
-  // Grundlinie so setzen, dass die Oberlängen unter der Bildkarte bleiben
-  const mnYmm = cardY + cardH + titleMm * 0.4 + titleMm * 0.72;
+  // Im Querformat steht der Name oben in der rechten Spalte,
+  // sonst unter der Bildkarte.
+  const mnYmm = quer
+    ? kalTop + titleMm * 0.9
+    : cardY + cardH + titleMm * 0.4 + titleMm * 0.72;
+  const mitteX = quer ? (kalX + kalW/2) * SC : W/2;
   ctx.fillStyle = acStr;
-  ctx.fillText(mspaced, W/2, Math.round(mnYmm * SC));
+  ctx.fillText(mspaced, mitteX, Math.round(mnYmm * SC));
 
   // 4. Kalender-Grid in Pixel
   const gridTopPx = Math.round((mnYmm + titleMm * 0.55) * SC);
-  const gridBotPx = Math.round((ph - mbot) * SC);
+  const gridBotPx = Math.round(kalBot * SC);
   const gridHpx   = gridBotPx - gridTopPx;
-  const colWpx    = Math.round((cardW * SC) / 7);
+  const colWpx    = Math.round((kalW * SC) / 7);
   const rowHpx    = gridHpx / (nw + 1);
-  const leftPx    = Math.round(mx * SC);
+  const leftPx    = Math.round(kalX * SC);
 
   // Schriftgrößen aus der Zeilenhöhe ableiten — so passt nichts mehr übereinander,
   // egal ob A4 hoch, A4 quer oder A3 und egal ob der Monat 5 oder 6 Wochen hat.
