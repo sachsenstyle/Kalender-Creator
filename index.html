@@ -579,17 +579,24 @@
 
       <!-- Freies Thema -->
       <div id="eigen-box" style="display:none;margin-top:14px">
-        <label>Dein Thema</label>
-        <input type="text" id="eigen-text" placeholder="z. B. FSV Zwickau, mein Garten, alte Motorräder, Nähen …"
-               oninput="setEigen()">
+        <label>Dein Thema – eine Zeile je Monat</label>
+        <textarea id="eigen-text" rows="12" oninput="setEigen()"
+          placeholder="Berlin mit dem Brandenburger Tor&#10;Paris mit dem Eiffelturm&#10;London mit Big Ben&#10;Rom mit dem Kolosseum&#10;… insgesamt 12 Zeilen"
+          style="line-height:1.6"></textarea>
+        <div id="eigen-zaehler" style="margin-top:6px;font-size:13px;color:rgba(255,255,255,0.55)"></div>
         <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px">
           <div class="chip active" id="eigen-motiv-1" onclick="setEigenArt(1)">🎯 Ein Motiv groß im Bild</div>
           <div class="chip" id="eigen-motiv-0" onclick="setEigenArt(0)">🏞️ Weite Szene / Landschaft</div>
         </div>
         <div class="info-box" style="margin-top:12px">
-          Schreib einfach hin, was zu sehen sein soll – auf Deutsch reicht.
-          <br>Bei Vereinen und Marken: Wappen und Logos kommen bei KI-Bildern meist falsch heraus.
-          Beschreib lieber Farben und Stimmung, etwa „Fußballstadion in Rot und Weiß".
+          <strong>Schreib 12 Zeilen – für jeden Monat eine.</strong> Auf Deutsch reicht.
+          Nur eine Zeile bedeutet: zwölfmal dasselbe Motiv.
+          <br><br>
+          Gut: „Berlin mit dem Brandenburger Tor"
+          <br>Schlecht: „12 Hauptstädte mit Wahrzeichen" – daraus macht die KI ein Bild mit zwölf Städten darin.
+          <br><br>
+          Beschreib jeweils ein Bild, keine Stichwörter. Vereinswappen und Logos
+          kommen bei KI-Bildern fast immer verzerrt heraus – nimm dafür Farben, Orte und Gegenstände.
         </div>
       </div>
 
@@ -598,7 +605,7 @@
       <!-- Stil -->
       <label>Bildstil</label>
       <div class="chip-group" id="chips-stil">
-        <div class="chip active" data-group="stil" data-val="photorealistic, professional wildlife photography" onclick="selChip(this)">📷 Fotorealistisch</div>
+        <div class="chip active" data-group="stil" data-val="photorealistic, professional photography, sharp natural detail" onclick="selChip(this)">📷 Fotorealistisch</div>
         <div class="chip" data-group="stil" data-val="detailed pencil sketch on aged paper, sepia tones" onclick="selChip(this)">✏️ Bleistiftzeichnung</div>
         <div class="chip" data-group="stil" data-val="soft watercolor painting, delicate brushstrokes" onclick="selChip(this)">🎨 Aquarell</div>
         <div class="chip" data-group="stil" data-val="rich oil painting style, classical art" onclick="selChip(this)">🖼️ Ölgemälde</div>
@@ -616,6 +623,8 @@
         <div class="chip" data-group="mood" data-val="warm golden hour light, soft and inviting" onclick="toggleMood(this)">🌅 Goldene Stunde</div>
         <div class="chip" data-group="mood" data-val="misty morning atmosphere, ethereal fog" onclick="toggleMood(this)">🌫️ Mystisch</div>
         <div class="chip" data-group="mood" data-val="bright sunny daylight, vivid colors" onclick="toggleMood(this)">☀️ Sonnig</div>
+        <div class="chip" data-group="mood" data-val="fresh spring light, clear and bright after rain" onclick="toggleMood(this)">🌱 Frühlingshaft</div>
+        <div class="chip" data-group="mood" data-val="warm autumn light, golden and hazy" onclick="toggleMood(this)">🍂 Herbstlich</div>
         <div class="chip" data-group="mood" data-val="cold winter light, frosty and serene" onclick="toggleMood(this)">❄️ Winterlich</div>
         <div class="chip" data-group="mood" data-val="twilight blue hour, calm and peaceful" onclick="toggleMood(this)">🌙 Dämmerung</div>
       </div>
@@ -917,6 +926,8 @@ let state = {
   accentColor: '#d40d0d',
   year: 2027,
   design: 'mittel',
+  eigenesThema: false,
+  eigenListe: [],
 };
 
 // Zeichnet ein Bild formatfüllend, ohne es zu verzerren.
@@ -1041,16 +1052,16 @@ function goStep(n) {
 // ═══════════════════════════════════════════════════════
 const promptData = {
   thema:  'a single owl',
-  stil:   'photorealistic, professional wildlife photography',
+  stil:   'photorealistic, professional photography, sharp natural detail',
   mood:   'dramatic natural lighting, moody atmosphere',
   farbe:  'natural true-to-life colors',
   motiv:  true,   // true = Tier/Pflanze im Mittelpunkt, false = Landschaft
 };
 const extras = {
-  consistent: { active: false, text: 'consistent style and color palette across all cells' },
+  consistent: { active: false, text: 'keep the same style and color palette as the other months of this calendar' },
   notext:     { active: true,  text: 'no text, no labels, no watermarks' },
   hires:      { active: true,  text: 'high resolution, sharp details' },
-  noborder:   { active: false, text: 'seamless grid, no visible borders between images' },
+  noborder:   { active: false, text: 'no frame and no border around the image' },
   closeup:    { active: false, text: 'close-up portraits, subject fills the frame' },
   wildlife:   { active: false, text: 'authentic wildlife setting, natural environment' },
 };
@@ -1063,6 +1074,7 @@ function selChip(el) {
   if(group === 'thema') {
     promptData.motiv = el.dataset.motiv === '1';
     const eigen = (el.id === 'chip-eigen');
+    state.eigenesThema = eigen;
     document.getElementById('eigen-box').style.display = eigen ? '' : 'none';
     if(eigen) { setEigen(); return; }
   }
@@ -1071,10 +1083,19 @@ function selChip(el) {
 
 // Freies Thema: Text übernehmen
 function setEigen() {
-  const txt = document.getElementById('eigen-text').value.trim();
-  const chip = document.getElementById('chip-eigen');
-  promptData.thema = txt ? txt : 'a single owl';
-  chip.dataset.val = promptData.thema;
+  const roh = document.getElementById('eigen-text').value;
+  // Jede nicht leere Zeile ist ein Monatsmotiv
+  const zeilen = roh.split('\n').map(z => z.trim()).filter(z => z);
+  state.eigenListe = zeilen;
+  promptData.thema = zeilen.length ? zeilen[0] : 'a single owl';
+  document.getElementById('chip-eigen').dataset.val = promptData.thema;
+
+  const z = document.getElementById('eigen-zaehler');
+  if(zeilen.length === 0)       z.innerHTML = 'Noch nichts eingetragen.';
+  else if(zeilen.length === 12) z.innerHTML = '<span style="color:#5cc98a">✓ 12 Zeilen – jeder Monat bekommt sein eigenes Motiv.</span>';
+  else if(zeilen.length === 1)  z.innerHTML = '<span style="color:#e0c070">1 Zeile – alle zwölf Monate zeigen dasselbe Motiv.</span>';
+  else                          z.innerHTML = '<span style="color:#e0c070">' + zeilen.length + ' Zeilen – die Liste wird wiederholt, bis zwölf Monate voll sind. Für zwölf verschiedene Bilder: ' + (12 - zeilen.length) + ' Zeilen fehlen noch.</span>';
+
   buildPrompt();
 }
 
@@ -1109,13 +1130,28 @@ function toggleMood(el) {
 }
 
 // Automatische Verteilung: Winterlich nur im Winter, der Rest wechselt sich ab
+// Jahreszeiten-Stimmungen gehören zu festen Monaten. Ist eine davon angeklickt,
+// bekommt sie genau ihre Monate; alle übrigen Stimmungen teilen sich den Rest.
+const SAISON_MOOD = {
+  'cold winter light, frosty and serene':            [11, 0, 1],
+  'fresh spring light, clear and bright after rain': [2, 3, 4],
+  'warm autumn light, golden and hazy':              [8, 9, 10]
+};
+
 function autoMood(i) {
-  const winterOk = moodSel.includes(WINTER_MOOD);
-  const rest = moodSel.filter(m => m !== WINTER_MOOD);
-  if(WINTER_MONTHS.includes(i) && winterOk) return WINTER_MOOD;
-  if(rest.length === 0) return WINTER_MOOD;
-  const nichtWinter = [...Array(12).keys()].filter(m => !(winterOk && WINTER_MONTHS.includes(m)));
-  const pos = nichtWinter.indexOf(i);
+  // 1. Gehört dieser Monat zu einer angeklickten Jahreszeit?
+  for(const [mood, monate] of Object.entries(SAISON_MOOD)) {
+    if(moodSel.includes(mood) && monate.includes(i)) return mood;
+  }
+  // 2. Sonst die übrigen Stimmungen reihum auf die freien Monate verteilen
+  const belegt = [];
+  Object.entries(SAISON_MOOD).forEach(([mood, monate]) => {
+    if(moodSel.includes(mood)) belegt.push(...monate);
+  });
+  const rest = moodSel.filter(m => !SAISON_MOOD[m]);
+  if(rest.length === 0) return moodSel[0];
+  const frei = [...Array(12).keys()].filter(m => !belegt.includes(m));
+  const pos  = frei.indexOf(i);
   return rest[(pos < 0 ? i : pos) % rest.length];
 }
 function moodFor(i) { return moodOverride[i] || autoMood(i); }
@@ -1150,6 +1186,77 @@ const MONTH_SEASON = [
 
 // Perspektiven – werden beim Klick auf "Prompt neu generieren" neu gemischt
 // Ansichten für Landschaften – da darf die Weite wirken
+// Ein eigenes, konkretes Motiv je Monat. Ohne diese Listen bekommt die Bild-KI
+// zwölfmal denselben Auftrag ("ein Wildtier") und würfelt — dann kommt zweimal
+// Hirsch und zweimal Wildschwein heraus. Die Reihenfolge ist grob auf die
+// Jahreszeit abgestimmt.
+const MOTIV_LISTEN = {
+  'a single owl': [
+    'a tawny owl', 'a snowy owl', 'an eagle owl (Uhu)', 'a barn owl',
+    'a little owl', 'a long-eared owl', 'a pygmy owl', 'a short-eared owl',
+    'an Ural owl', "a Tengmalm's owl", 'a scops owl', 'a great grey owl'
+  ],
+  'a single wild animal of central Europe in its natural habitat': [
+    'a red fox', 'a lynx', 'a brown hare', 'a badger',
+    'a roe deer', 'a red squirrel', 'a wild boar', 'an otter',
+    'a red stag', 'a pine marten', 'a wolf', 'a wildcat'
+  ],
+  'a single European bird of prey': [
+    'a golden eagle', 'a goshawk', 'a common buzzard', 'a red kite',
+    'a kestrel', 'a sparrowhawk', 'a peregrine falcon', 'an osprey',
+    'a black kite', 'a marsh harrier', 'a hobby falcon', 'a white-tailed eagle'
+  ],
+  'a single wildflower': [
+    'a snowdrop', 'a winter aconite', 'a crocus', 'a wood anemone',
+    'a cowslip', 'a wild rose', 'a cornflower', 'a poppy',
+    'a sunflower', 'a michaelmas daisy', 'a heather bloom', 'a christmas rose'
+  ],
+  'a single herb or plant, botanical study': [
+    'rosemary', 'thyme', 'wild garlic', 'chives',
+    'lemon balm', 'lavender', 'basil', 'oregano',
+    'sage', 'rosehip', 'juniper', 'bay laurel'
+  ],
+  'a single insect in macro view': [
+    'a winter moth', 'a ladybird', 'a bumblebee', 'a brimstone butterfly',
+    'a honey bee', 'a dragonfly', 'a swallowtail butterfly', 'a grasshopper',
+    'a hornet', 'a garden spider in its web', 'a stag beetle', 'a firefly'
+  ],
+  'a single mountain landscape': [
+    'a snow-covered mountain peak', 'a frozen mountain lake', 'a mountain ridge above the clouds',
+    'a alpine valley with a stream', 'an alpine meadow in bloom', 'a hiking path along a ridge',
+    'a rocky summit under a blue sky', 'a mountain hut on a slope', 'a mountain forest turning colour',
+    'a larch forest in golden light', 'a misty mountain slope', 'a snowy mountain pass'
+  ],
+  'a single tranquil forest scene': [
+    'a snow-covered forest', 'bare beech trees in frost', 'a forest floor with first green',
+    'a beech forest in fresh leaf', 'a sunlit clearing', 'a dense green forest path',
+    'a forest stream in summer', 'a pine forest in warm light', 'a forest edge turning colour',
+    'a golden beech forest', 'a misty forest in late autumn', 'a snowy spruce forest'
+  ],
+  'a single serene lake or river landscape': [
+    'a frozen lake', 'a river with drifting ice', 'a lake in early spring light',
+    'a reed belt at a lake shore', 'a lake reflecting fresh green', 'a river bend in summer',
+    'a clear mountain lake', 'a quiet bay at sunset', 'a lake with autumn trees',
+    'a river in golden autumn light', 'a misty lake at dawn', 'a snow-lined riverbank'
+  ],
+  'a single ancient castle or ruin in a European landscape': [
+    'a castle in deep snow', 'a castle ruin in winter fog', 'a castle above a spring valley',
+    'a moated castle in fresh green', 'a hilltop castle in bloom', 'a castle wall in summer light',
+    'a castle courtyard in bright sun', 'a castle above a river', 'a castle with autumn forest',
+    'a castle ruin in golden foliage', 'a castle in late autumn mist', 'a castle at blue hour in winter'
+  ]
+};
+
+// Liefert das Motiv für einen bestimmten Monat.
+// Beim eigenen Thema kann die Nutzerin eine Zeile je Monat eingeben.
+function motivFuer(i) {
+  if(state.eigenesThema && Array.isArray(state.eigenListe) && state.eigenListe.length) {
+    return state.eigenListe[i % state.eigenListe.length];
+  }
+  const liste = MOTIV_LISTEN[promptData.thema];
+  return liste ? liste[i] : promptData.thema;
+}
+
 const VIEWS_LAND = [
   'wide establishing view', 'view from slightly above',
   'low camera angle near the ground', 'side view', 'view into the distance',
@@ -1168,7 +1275,26 @@ const VIEWS_MOTIV = [
   'subject against a soft blurred background', 'subject seen from slightly above, close'
 ];
 
+// Ansichten für ein selbst eingegebenes Thema – bewusst neutral.
+// Die Tier-Ansichten (Kopf, Augen, Flügel) erzeugen sonst bei jedem
+// beliebigen Thema Porträts von Menschen oder Tieren.
+const VIEWS_EIGEN = [
+  'the main subject large and centred in the frame',
+  'seen from slightly above',
+  'low camera angle, close to the ground',
+  'from the side, filling the frame',
+  'straight-on view, centred',
+  'slightly off-centre, with space around it',
+  'close view of a characteristic detail',
+  'subject in the foreground, surroundings softly blurred',
+  'seen from a short distance, whole subject visible',
+  'from a slightly raised viewpoint',
+  'against the light, clear outline',
+  'from the front, filling most of the picture'
+];
+
 function currentViews() {
+  if(state.eigenesThema) return VIEWS_EIGEN;
   return promptData.motiv ? VIEWS_MOTIV : VIEWS_LAND;
 }
 let viewOrder = [...Array(12).keys()];
@@ -1199,19 +1325,29 @@ function buildPrompt() {
     ? 'The subject must be large and dominant, filling at least 60 percent of the frame height, ' +
       'clearly in focus, close to the camera. Background softly blurred and secondary. ' +
       'Do NOT show the subject as a small figure in a wide landscape. '
-    : 'A wide open scene with depth and distance, no single dominant object in the foreground. ';
+    : 'A wide scene with depth and distance – show the subject within its surroundings, not as a close-up. ';
 
-  promptTexts = MONTHS_DE.map((mName, i) =>
-      `Create ONE single image of ${promptData.thema}. ` +
-      `Season: ${MONTH_SEASON[i]}. ` +
+  // Bei einem frei eingegebenen Thema darf die Bild-KI keine Person und kein Tier
+  // dazuerfinden, das im Thema gar nicht vorkommt.
+  const eigenLine = state.eigenesThema
+    ? 'Show only what the topic names. Do not add a person, a face, a portrait or an animal ' +
+      'unless the topic itself mentions one. '
+    : '';
+
+  promptTexts = MONTHS_DE.map((mName, i) => {
+    const motiv = motivFuer(i);
+    return `Create ONE single image of ${motiv}. ` +
+      `Season and weather: ${MONTH_SEASON[i]} – this sets the time of year only and must never replace the subject. ` +
       `Composition: ${currentViews()[viewOrder[i]]}. ` +
-      scaleLine +
+      scaleLine + eigenLine +
       `Style: ${promptData.stil}. ` +
       `Mood and lighting: ${moodFor(i)}. ` +
       `Color palette: ${promptData.farbe}${extraStr}. ` +
       `Aspect ratio ${ratio}, landscape orientation, highest available resolution (at least 1536 pixels wide). ` +
-      `Exactly one subject in one complete scene – no grid, no collage, no split panels, no multiple variants, no text, no borders.`
-  );
+      `One complete scene – no grid, no collage, no split panels, no multiple variants, no text, no borders. ` +
+      `Most important: the picture must clearly and recognisably show ${motiv}. ` +
+      `Do not drift to any other subject, and add nothing that was not asked for.`;
+  });
 
   const list = document.getElementById('prompt-list');
   list.innerHTML = '';
